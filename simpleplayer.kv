@@ -214,19 +214,18 @@
             shorten: True
             shorten_from: "right"
             font_name: app.font
-            texture_size: self.size
+            text_size: self.size
+            size: self.texture_size
         Label:
             id: artist
             shorten: True
             shorten_from: "right"
             font_name: app.font
-            texture_size: self.size
+            text_size: self.size
+            size: self.texture_size
     Label:
         id: duration
-        shorten: True
-        shorten_from: "right"
         font_name: app.font
-        size: self.texture_size
     Button:
         id: options
         background_down: f'{application_path}/resources/images/more_vert.png'
