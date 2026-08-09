@@ -1,0 +1,283 @@
+#:kivy 2.3.1
+#:import Color config.Color
+#:import Size config.Size
+#:import Padding config.Padding
+#:import Spacing config.Spacing
+
+#:import Logger kivy.logger.Logger
+
+#:import formated_time main.formated_time
+#:import application_path utils.application_path
+
+<TopPanel@BoxLayout>:
+    size_hint: Size.top_buttons
+    orientation: 'horizontal'
+    AnchorLayout:
+        anchor_x: "left"
+        anchor_y: "top"
+        PlayerBackButton:
+            size_hint: None, None
+            size: 25, 25
+            border: (0, 0, 0, 0)
+            background_down: f'{application_path}/resources/images/arrow_back.png'
+            background_normal: f'{application_path}/resources/images/arrow_back.png'
+            halign: "left"
+            valign: "top"
+            on_release: self.go_back()
+    AnchorLayout:
+        anchor_x: "right"
+        anchor_y: "top"
+        OptionsButton:
+            size_hint: None, None
+            size: 25, 25
+            border: (0, 0, 0, 0)
+            background_down: f'{application_path}/resources/images/more_vert.png'
+            background_normal: f'{application_path}/resources/images/more_vert.png'
+            halign: "right"
+            valign: "top"
+            on_release: self.open_options()
+
+<PlayerScreen>:
+    Widget:
+        canvas.before:
+            Color:
+                rgba: Color.background
+            Rectangle:
+                size: root.size
+    BoxLayout:
+        padding: Padding.box
+        orientation: 'vertical'
+        size: root.size
+        spacing: Spacing.box
+
+        TopPanel:
+
+        Cover:
+            source: root.metadt.image_path
+            size_hint: Size.image
+        BoxLayout:
+            size_hint: Size.title
+            orientation: 'vertical'
+            spacing: Spacing.title
+            TitleLabel:
+                shorten: True
+                shorten_from: 'right'
+                text: root.metadt.tag.title
+                font_size: Size.title_font
+                size: self.texture_size
+                halign: "left"
+                valign: "bottom"
+                text_size: self.size
+                max_lines: 1
+                font_name: app.font
+            ArtistLabel:
+                shorten: True
+                shorten_from: 'right'
+                text: root.metadt.tag.artist
+                font_size: Size.artist_font
+                size: self.texture_size
+                halign: "left"
+                valign: "top"
+                text_size: self.size
+                max_lines: 1
+                font_name: app.font
+        MusicSlider:
+            orientation: 'horizontal'
+            size_hint: Size.slider
+            range: (0, root.length)
+            value: root.slider_value
+            on_touch_move: self.slider_move(args[1], self)
+            on_touch_up: self.slider_up(args[1], self)
+            value_track: True
+            value_track_color: Color.slider_track
+            step: 2
+            cursor_size: 0, 0
+            # sensitivity: 'handle'
+            # background_width: '4sp'
+            # value_track_width: '4sp'
+        BoxLayout: 
+            size_hint: Size.time
+            orientation: 'horizontal'
+            spacing: 15
+            PosLabel:
+                halign: 'left'
+                text: formated_time(round(root.track_pos))
+                font_name: app.font
+                text_size: self.size
+            LengthLabel:
+                id: length_label
+                halign: 'right'
+                text: formated_time(root.length)
+                font_name: app.font
+                text_size: self.size
+
+
+        BoxLayout:
+            #FIXME: centering buttons without creating 2 "padding" ones
+            size_hint: Size.play_buttons
+            pos_hint: {"center_x": .5}
+            orientation: 'horizontal'
+            spacing: Spacing.player_buttons
+            padding: Padding.buttons
+            Button:
+                border: (0, 0, 0, 0)
+                background_color: (0, 0, 0, 0)
+                background_normal: ""
+            SeekBackwardButton:
+                pos_hint: {"center_x": 0}
+                size_hint: (None, None)
+                size: (50, 50)
+                border: (0, 0, 0, 0)
+                background_down: f'{application_path}/resources/images/replay_10.png'
+                background_normal: f'{application_path}/resources/images/replay_10.png'
+                # text: '-10'
+            PreviousButton:
+                id: previous_button
+                pos_hint: {"center_x": .25}
+                size_hint: (None, None)
+                size: (50, 50)
+                border: (0, 0, 0, 0)
+                background_down: f'{application_path}/resources/images/skip_previous.png'
+                background_normal: f'{application_path}/resources/images/skip_previous.png'
+                on_release: self.play_previous()
+                # text: 'Previous'
+            PlayButton:
+                id: play_button
+                pos_hint: {"center_x": .5}
+                size_hint: (None, None)
+                size: (50, 50)
+                # text: self.text
+                # background_color: (0, 0, 0, 0)
+                border: (0, 0, 0, 0)
+                background_down: f'{application_path}/resources/images/play_circle.png'
+                background_normal: f'{application_path}/resources/images/play_circle.png'
+                on_release: self.toggle_play()
+                # on_press: self.on_press()
+            NextButton:
+                id: next_button
+                pos_hint: {"center_x": .75}
+                size_hint: (None, None)
+                size: (50, 50)
+                # text: 'Next'
+                border: (0, 0, 0, 0)
+                background_down: f'{application_path}/resources/images/skip_next.png'
+                background_normal: f'{application_path}/resources/images/skip_next.png'
+                on_release: self.play_next()
+            SeekForwardButton:
+                pos_hint: {"center_x": 1}
+                size_hint: (None, None)
+                size: (50, 50)
+                border: (0, 0, 0, 0)
+                background_down: f'{application_path}/resources/images/forward_10.png'
+                background_normal: f'{application_path}/resources/images/forward_10.png'
+                # text: '+10'
+            Button:
+                border: (0, 0, 0, 0)
+                background_color: (0, 0, 0, 0)
+                background_normal: ""
+
+        AnchorLayout:
+            # FIXME: if possible create button with image that can be smaller than button
+            size_hint: Size.queue
+            QueueButton:
+                # background_down: f'{application_path}/resources/images/arrow_up.png'
+                # background_normal: f'{application_path}/resources/images/arrow_up.png'
+                border: (0, 0, 0, 0)
+                background_color: (0, 0, 0, 0)
+                background_normal: ""
+                on_release: self.open_queue()
+                # on_release: root.manager.current = "queue"
+            Image:
+                source:  f'{application_path}/resources/images/arrow_up.png'
+                size_hint: None, None
+                pos_hint: {"center_x": .5}
+                size: 100, 50
+
+# https://github.com/kivy-school/recycleex/blob/main
+<TrackView>:
+    now_playing: False
+    canvas.before:
+        Color:
+            rgba: Color.now_playing_background if self.now_playing else (0, 0, 0, 0)
+        Rectangle:
+            size: self.size
+            pos: self.pos
+    Label:
+        id: track_num
+        font_name: app.font
+    Image:
+        id: cover
+    BoxLayout:
+        orientation: "vertical"
+        Label:
+            id: title
+            shorten: True
+            shorten_from: "right"
+            font_name: app.font
+            texture_size: self.size
+        Label:
+            id: artist
+            shorten: True
+            shorten_from: "right"
+            font_name: app.font
+            texture_size: self.size
+    Label:
+        id: duration
+        shorten: True
+        shorten_from: "right"
+        font_name: app.font
+        size: self.texture_size
+    Button:
+        id: options
+        background_down: f'{application_path}/resources/images/more_vert.png'
+        background_normal: f'{application_path}/resources/images/more_vert.png'
+        on_release: Logger.info("TODO: options buttons queue")
+
+<QueueView>:
+    viewclass: "TrackView"
+    bar_width: dp(0)
+    scroll_wheel_distance: dp(56)
+    RecycleBoxLayout:
+        default_size: None, dp(56)
+        default_size_hint: 1, None
+        height: self.minimum_height
+        orientation: "vertical"
+        size_hint_y: None
+
+<QueueScreen>:
+    id: queue_screen
+    on_pre_enter: self.load_queue_screen()
+    Widget:
+        canvas.before:
+            Color:
+                rgba: Color.background
+            Rectangle:
+                size: root.size
+    BoxLayout:
+        padding: Padding.box
+        orientation: 'vertical'
+        size: root.size
+        spacing: Spacing.box
+
+        TopPanel:
+
+        QueueView:
+            id: qv
+
+        AnchorLayout:
+            # https://kivy.org/doc/stable/api-kivy.uix.behaviors.html#module-kivy.uix.behaviors
+            # FIXME: if possible create button with image that can be smaller than button
+            size_hint: Size.queue
+            CloseQueueButton:
+                # background_down: f'{application_path}/resources/images/arrow_up.png'
+                # background_normal: f'{application_path}/resources/images/arrow_up.png'
+                border: (0, 0, 0, 0)
+                background_color: (0, 0, 0, 0)
+                background_normal: ""
+                on_release: self.close_queue()
+                # on_release: root.manager.current = "queue"
+            Image:
+                source:  f'{application_path}/resources/images/arrow_down_80dp.png'
+                size_hint: None, None
+                pos_hint: {"center_x": .5}
+                size: 100, 50
