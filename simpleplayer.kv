@@ -195,22 +195,18 @@
 
 # https://github.com/kivy-school/recycleex/blob/main
 <TrackView>:
+    index:
     now_playing: False
+    on_release: self.play_track()
+    border: (0, 0, 0, 0)
+    background_color: (0, 0, 0, 0)
+    background_normal: ""
     canvas.before:
         Color:
             rgba: Color.now_playing_background if self.now_playing else (0, 0, 0, 0)
         Rectangle:
             size: self.size
             pos: self.pos
-    # Label:
-    #     id: track_num
-    #     font_name: app.font
-    #     size_hint: None, 1
-    #     # text_size: self.size
-    #     size: self.texture_size
-    #     max_lines: 1
-    #     valign: "center"
-    #     halign: "center"
     Image:
         id: cover
         size_hint: None, 1
@@ -259,7 +255,6 @@
         Image:
             source: f'{application_path}/resources/images/more_vert.png'
             fit_mode: "scale-down"
-
 
 <QueueView>:
     viewclass: "TrackView"

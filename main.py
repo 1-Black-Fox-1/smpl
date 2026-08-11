@@ -304,6 +304,7 @@ class PlayerScreen(Screen):
         self.update_slider_value_event()
         self.update_pos_event()
 
+    # TODO: remove _ and add it to handlers
     def _set_now_playing_pos(self, value):
         self.now_playing_pos = self.handler_now_playing_pos(value)
 
@@ -322,8 +323,14 @@ class PlayerScreen(Screen):
         return value
 
 
-class TrackView(RecycleKVIDsDataViewBehavior, BoxLayout):
+class TrackView(RecycleKVIDsDataViewBehavior, BoxLayout, Button):
     now_playing = BooleanProperty(False)
+    index = NumericProperty()
+
+    def play_track(self):
+        player = App.get_running_app().root.get_screen("player")
+        if not self.now_playing:
+            player._set_now_playing_pos(self.index)
 
 
 class QueueView(RecycleView):
@@ -331,8 +338,8 @@ class QueueView(RecycleView):
 
     def update_qv(self):
         player = App.get_running_app().root.get_screen("player")
-        # self.data = [{"track_num.text": str(i + 1),
-        self.data = [{"cover.source": player.metadts[i].image_path,
+        self.data = [{"index": i,
+                      "cover.source": player.metadts[i].image_path,
                       "title.text": player.metadts[i].tag.title,
                       "artist.text": player.metadts[i].tag.artist,
                       "duration.text": formated_time(player.metadts[i].tag.duration),
