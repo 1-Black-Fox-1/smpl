@@ -319,34 +319,6 @@ class PlayerScreen(Screen):
 
 class TrackView(RecycleKVIDsDataViewBehavior, BoxLayout):
     now_playing = BooleanProperty(False)
-    # # track number, cover, title, artist, duration
-    # def __init__(self, **kwargs):
-    #     super().__init__(**kwargs)
-    #     self.track_number = Label(font_name=Font.main,
-    #                               size_hint=(0.1, None),
-    #                               size=(0, 25))
-    #     self.cover = Image(size_hint=(0.2, None),
-    #                        size=(0, 50))
-    #     self.title_artistl = BoxLayout(orientation="vertical",
-    #                                    size_hint=(1, None),
-    #                                    size=(0, 50))
-    #     self.title = Label(font_name=Font.main,
-    #                        shorten=True,
-    #                        shorten_from="right",
-    #                        size_hint=(1, 0.5))
-    #     self.artist = Label(font_name=Font.main,
-    #                         shorten=True,
-    #                         size_hint=(1, 0.5),
-    #                         shorten_from="right")
-    #     self.title_artistl.add_widget(self.title)
-    #     self.title_artistl.add_widget(self.artist)
-    #     self.duration = Label(font_name=Font.main,
-    #                           size_hint=(0.1, None),
-    #                           size=(0, 30))
-    #     self.add_widget(self.track_number)
-    #     self.add_widget(self.cover)
-    #     self.add_widget(self.title_artistl)
-    #     self.add_widget(self.duration)
 
     # def create_hl(self):
     #     with self.canvas.before:
@@ -381,37 +353,6 @@ class QueueScreen(Screen):
             sm.transition.direction = "down"
             sm.transition.mode = "pop"
             sm.current = "player"
-
-    # class QueueView(BoxLayout):
-    #     track_views = ListProperty()
-
-    #     def __init__(self, **kwargs):
-    #         super().__init__(**kwargs)
-    #         self.orientation = "vertical"
-    #         self.spacing = 5
-
-    #     def update_qv(self):
-    #         # TODO: create flags for update_qv and update_qv_hl
-    #         # so we dont have to update it every time
-    #         player = App.get_running_app().root.get_screen("player")
-    #         self.rows = player.queue_length + 1
-    #         self.clear_qv()
-    #         for pos, track_metadt in enumerate(player.metadts):
-    #             track = TrackView()
-    #             track.track_number.text = str(pos + 1)
-    #             track.title.text = track_metadt.tag.title
-    #             track.title.text_size = track.title.size
-    #             track.artist.text = track_metadt.tag.artist
-    #             track.artist.text_size = track.artist.size
-    #             track.cover.source = track_metadt.image_path
-    #             track.duration.text = formated_time(track_metadt.tag.duration)
-    #             self.track_views.append(track)
-    #             self.add_widget(self.track_views[pos])
-    #         self.track_views[player.now_playing_pos].create_hl()
-
-    #     def clear_qv(self):
-    #         self.clear_widgets()
-    #         self.track_views = []
 
 
 class SimplePlayer(App):
