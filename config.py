@@ -24,6 +24,9 @@ class Size:
     title_font: str = "16sp"
     # title_size: tuple[int | None, int | None] = (300, None)
     artist_font: str = "14sp"
+    queue_title_font: str = "14sp"
+    queue_artist_font: str = "12sp"
+    queue_duration_font: str = "14sp"
 
     image = [1., .55]
     title = [1., .1]
