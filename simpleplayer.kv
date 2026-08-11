@@ -202,35 +202,64 @@
         Rectangle:
             size: self.size
             pos: self.pos
-    Label:
-        id: track_num
-        font_name: app.font
+    # Label:
+    #     id: track_num
+    #     font_name: app.font
+    #     size_hint: None, 1
+    #     # text_size: self.size
+    #     size: self.texture_size
+    #     max_lines: 1
+    #     valign: "center"
+    #     halign: "center"
     Image:
         id: cover
+        size_hint: None, 1
+        fit_mode: "scale-down"
     BoxLayout:
         orientation: "vertical"
         Label:
             id: title
+            font_size: Size.queue_title_font
             shorten: True
             shorten_from: "right"
             font_name: app.font
             text_size: self.size
             size: self.texture_size
+            halign: "left"
+            valign: "bottom"
         Label:
             id: artist
+            font_size: Size.queue_artist_font
             shorten: True
             shorten_from: "right"
             font_name: app.font
             text_size: self.size
             size: self.texture_size
+            halign: "left"
+            valign: "top"
     Label:
         id: duration
         font_name: app.font
-    Button:
-        id: options
-        background_down: f'{application_path}/resources/images/more_vert.png'
-        background_normal: f'{application_path}/resources/images/more_vert.png'
-        on_release: Logger.info("TODO: options buttons queue")
+        size_hint: None, 1
+        size: self.texture_size
+        valign: "center"
+        halign: "center"
+    # Tried ImageButton@Image+ButtonBehavior. Its on_release doesnt work for some reason
+    AnchorLayout:
+        size_hint: None, 1
+        size: 25, 25
+        Button:
+            id: options
+            # background_down: f'{application_path}/resources/images/more_vert.png'
+            # background_normal: f'{application_path}/resources/images/more_vert.png'
+            on_release: Logger.info("TODO: open queue options")
+            border: (0, 0, 0, 0)
+            background_color: (0, 0, 0, 0)
+            background_normal: ""
+        Image:
+            source: f'{application_path}/resources/images/more_vert.png'
+            fit_mode: "scale-down"
+
 
 <QueueView>:
     viewclass: "TrackView"

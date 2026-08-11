@@ -331,8 +331,8 @@ class TrackView(RecycleKVIDsDataViewBehavior, BoxLayout):
 class QueueView(RecycleView):
     def update_qv(self):
         player = App.get_running_app().root.get_screen("player")
-        self.data = [{"track_num.text": str(i + 1),
-                      "cover.source": player.metadts[i].image_path,
+        # self.data = [{"track_num.text": str(i + 1),
+        self.data = [{"cover.source": player.metadts[i].image_path,
                       "title.text": player.metadts[i].tag.title,
                       "artist.text": player.metadts[i].tag.artist,
                       "duration.text": formated_time(player.metadts[i].tag.duration),
