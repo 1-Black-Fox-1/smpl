@@ -258,6 +258,11 @@ class PlayerScreen(Screen):
         self.sound_provider.bind(on_stop=self.auto_play_next)
         if prev_track_state == 'play':
             self.sound_provider.play()
+        root = App.get_running_app().root
+        screen = root.current
+        Logger.info(screen)
+        if screen == "queue":
+            root.get_screen(screen).update_hl()
 
     def bind_play_button(self):
         self.sound_provider.bind(on_play=self.ids.play_button.background_on_play)
@@ -320,15 +325,10 @@ class PlayerScreen(Screen):
 class TrackView(RecycleKVIDsDataViewBehavior, BoxLayout):
     now_playing = BooleanProperty(False)
 
-    # def create_hl(self):
-    #     with self.canvas.before:
-    #         r, g, b, a = Clr.now_playing_background
-    #         Color(r, g, b, a)
-    #         self.now_playing_hl = Rectangle(size=self.size,
-    #                                         pos=self.pos)
-
 
 class QueueView(RecycleView):
+    hl_pos = NumericProperty()
+
     def update_qv(self):
         player = App.get_running_app().root.get_screen("player")
         # self.data = [{"track_num.text": str(i + 1),
@@ -339,12 +339,23 @@ class QueueView(RecycleView):
                       "now_playing": False}
                      for i in range(player.queue_length)]
         self.data[player.now_playing_pos]["now_playing"] = True
+        self.hl_pos = player.now_playing_pos
         Logger.info(self.data)
+
+    def update_hl(self):
+        player = App.get_running_app().root.get_screen("player")
+        self.data[self.hl_pos]["now_playing"] = False
+        self.data[player.now_playing_pos]["now_playing"] = True
+        self.hl_pos = player.now_playing_pos
+        self.refresh_from_data()
 
 
 class QueueScreen(Screen):
-    def load_queue_screen(self):
+    def update_queue_screen(self):
         self.ids.qv.update_qv()
+
+    def update_hl(self):
+        self.ids.qv.update_hl()
 
     class CloseQueueButton(Button):
         def close_queue(self):
