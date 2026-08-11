@@ -88,7 +88,7 @@
             value: root.slider_value
             on_touch_move: self.slider_move(args[1], self)
             on_touch_up: self.slider_up(args[1], self)
-            value_track: True
+            value_track: True if root.slider_value != 0 else False
             value_track_color: Color.slider_track
             step: 2
             cursor_size: 0, 0
