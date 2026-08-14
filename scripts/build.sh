@@ -13,8 +13,8 @@ fi
 
 pyinstaller "${SCRIPT_DIR}/../main.py"\
     --distpath "${SCRIPT_DIR}/../bin"\
-    --workpath "${SCRIPT_DIR}"\
-    --specpath "${SCRIPT_DIR}"\
+    --workpath "${SCRIPT_DIR}/../build"\
+    --specpath "${SCRIPT_DIR}/.."\
     --name "smpl"\
     --add-data "${SCRIPT_DIR}/../resources/fonts:./resources/fonts"\
     --add-data "${SCRIPT_DIR}/../resources/images/:./resources/images"\
@@ -23,7 +23,7 @@ pyinstaller "${SCRIPT_DIR}/../main.py"\
     --hidden-import "main"\
     --onefile\
     #only for mac and win
-    # --icon="./images/simple-player.png"
+    # --icon="${SCRIPT_DIR}../resources/images/simple-player.png"
 
 if [ $VENV_ACTIVATED ]; then
     deactivate
