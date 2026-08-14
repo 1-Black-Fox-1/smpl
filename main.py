@@ -13,13 +13,16 @@ from kivy.clock import Clock
 from kivy.config import Config
 from kivy.logger import Logger
 from kivy.graphics import Color, Rectangle
-from kivy.properties import (BooleanProperty, ListProperty, NumericProperty,
-                             ObjectProperty, StringProperty)
+from kivy.properties import (BooleanProperty, BoundedNumericProperty,
+                             ListProperty, NumericProperty, ObjectProperty,
+                             StringProperty)
 from kivy.uix.image import Image
 from kivy.uix.label import Label
+from kivy.uix.popup import Popup
 from kivy.uix.button import Button
 from kivy.uix.slider import Slider
 from kivy.uix.widget import Widget
+from kivy.uix.spinner import Spinner
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.recycleview import RecycleView
 from kivy.uix.screenmanager import CardTransition, Screen, ScreenManager
@@ -140,8 +143,35 @@ class PlayerBackButton(Button):
 
 
 class OptionsButton(Button):
-    def open_options(self):
-        Logger.info("TODO: open options")
+    pass
+
+
+class Options(Popup):
+    pass
+
+
+class RepeatSpinner(Spinner):
+    repeat_variants = ListProperty(["Repeat", "No repeat", "Repeat queue"])
+
+
+class VolumeSlider(Slider):
+    def slider_move(self, touch, obj):
+        # Logger.info(f'{touch}, {obj}')
+        if touch.grab_current == obj:
+            app = App.get_running_app()
+            player = app.root.get_screen("player")
+            app.volume = self.value
+            player.sound_provider.volume = self.value
+            # Logger.info(app.volume)
+
+    def slider_up(self, touch, obj):
+        # Logger.info(f'{touch}, {obj}')
+        if touch.grab_current == obj:
+            app = App.get_running_app()
+            player = app.root.get_screen("player")
+            app.volume = self.value
+            player.sound_provider.volume = self.value
+            # Logger.info(app.volume)
 
 
 class TitleLabel(Label):
@@ -246,21 +276,24 @@ class PlayerScreen(Screen):
     def on_now_playing_pos(self, obj, value):
         self.now_playing = self.queue[self.now_playing_pos]
         prev_track_state = self.sound_provider.state
-        if prev_track_state == 'play':
+        prev_track_loop = self.sound_provider.loop
+        if prev_track_state == "play":
             self.sound_provider.stop()
         self.sound_provider.unload()
         self.sound_provider = SoundLoader.load(self.now_playing)
         self.metadt = Metadata(self.now_playing)
-        Logger.info(f'New sound {self.metadt.tag.title}')
+        Logger.info(f"New sound {self.metadt.tag.title}")
         self.set_length()
         self.bind_play_button()
         self.bind_update_pos()
         self.sound_provider.bind(on_stop=self.auto_play_next)
-        if prev_track_state == 'play':
+        app = App.get_running_app()
+        self.sound_provider.volume = app.volume
+        self.sound_provider.loop = prev_track_loop
+        if prev_track_state == "play":
             self.sound_provider.play()
-        root = App.get_running_app().root
+        root = app.root
         screen = root.current
-        Logger.info(screen)
         if screen == "queue":
             root.get_screen(screen).update_hl()
 
@@ -276,13 +309,19 @@ class PlayerScreen(Screen):
 
     # do not know how to name it
     def auto_play_next(self, obj):
-        root = App.get_running_app().root.get_screen("player")
+        app = App.get_running_app()
+        root = app.root.get_screen("player")
+        if abs(self.track_pos - self.length) < 0.5:
+            if (self.last_in_queue() and app.repeat == app.repeat_variants["repeat_queue"]):
+                root._set_now_playing_pos(0)
+                Clock.schedule_once(lambda dt: root.sound_provider.play(), 0)
+                return
         if self.last_in_queue():
             return
-        Logger.info('Auto play next tried')
+        # Logger.info('Auto play next tried')
         # Logger.info(f'{round(self.track_pos)} == {round(self.length)}')
-        Logger.info(f'{(self.track_pos)} == {(self.length)}')
-        Logger.info(abs(self.track_pos - self.length))
+        # Logger.info(f'{(self.track_pos)} == {(self.length)}')
+        # Logger.info(abs(self.track_pos - self.length))
         # there is math.ceil() to round UP to int
         if abs(self.track_pos - self.length) < 0.5:
             Logger.info('Auto play next succeded')
@@ -374,15 +413,32 @@ class QueueScreen(Screen):
 
 
 class SimplePlayer(App):
+    volume = BoundedNumericProperty(1, min=0, max=1,
+                                    errorhander=lambda x: 1 if x > 1 else 0)
+    repeat = StringProperty("No repeat")
+    repeat_variants = {"repeat": "Repeat",
+                       "no_repeat": "No repeat",
+                       "repeat_queue": "Repeat queue"}
+
     def build(self):
         self.font = Font.main
         Window.size = Size.minimal
-        self.title = 'Simple Player'
+        self.title = "Simple Player"
 
         sm = ScreenManager(transition=CardTransition())
         sm.add_widget(PlayerScreen(name="player"))
         sm.add_widget(QueueScreen(name="queue"))
         return sm
+
+    def on_repeat(self, obj, value):
+        player = self.get_running_app().root.get_screen("player")
+        if self.repeat_variants["repeat"] == self.repeat:
+            player.sound_provider.loop = True
+        if self.repeat_variants["no_repeat"] == self.repeat:
+            player.sound_provider.loop = False
+        if self.repeat_variants["repeat_queue"] == self.repeat:
+            player.sound_provider.loop = False
+            pass
 
     def on_start(self):
         pass

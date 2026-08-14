@@ -1,13 +1,14 @@
 #:kivy 2.3.1
-#:import Color config.Color
-#:import Size config.Size
-#:import Padding config.Padding
-#:import Spacing config.Spacing
 
 #:import Logger kivy.logger.Logger
+#:import Factory kivy.factory.Factory
 
-#:import formated_time main.formated_time
+#:import Color config.Color
+#:import Padding config.Padding
+#:import Size config.Size
+#:import Spacing config.Spacing
 #:import application_path utils.application_path
+#:import formated_time main.formated_time
 
 <TopPanel@BoxLayout>:
     size_hint: Size.top_buttons
@@ -35,7 +36,55 @@
             background_normal: f'{application_path}/resources/images/more_vert.png'
             halign: "right"
             valign: "top"
-            on_release: self.open_options()
+            on_release: Factory.Options().open()
+
+<Options>:
+    id: options
+    size_hint: None, None
+    size: 300, 300
+    title: ""
+    separator_height: 0
+    # canvas.before:
+    #     Color:
+    #         rgba: Color.background
+    #     Rectangle:
+    #         size: root.size
+    BoxLayout:
+        orientation: "vertical"
+        GridLayout:
+            height: self.minimum_height
+            rows: 2
+            spacing: 20
+            Label:
+                size_hint_y: None
+                # height: 10
+                text: "Volume"
+                font_size: Size.queue_artist_font
+                shorten: True
+                shorten_from: "right"
+                font_name: app.font
+                text_size: self.size
+                size: self.texture_size
+                halign: "left"
+                valign: "top"
+            VolumeSlider:
+                size_hint_y: None
+                height: 10
+                orientation: "horizontal"
+                # size_hint: Size.slider
+                range: (0, 1)
+                value: app.volume
+                on_touch_move: self.slider_move(args[1], self)
+                on_touch_up: self.slider_up(args[1], self)
+                value_track: True if app.volume != 0 else False
+                value_track_color: Color.slider_track
+                step: 0.05
+                cursor_size: 0, 0
+        RepeatSpinner:
+            text: app.repeat
+            values: self.repeat_variants
+            font_name: app.font
+            on_text: app.repeat = self.text
 
 <PlayerScreen>:
     Widget:
@@ -52,6 +101,7 @@
 
         TopPanel:
 
+# TODO: https://kivy.org/doc/stable/api-kivy.graphics.boxshadow.html
         Cover:
             source: root.metadt.image_path
             size_hint: Size.image
@@ -245,7 +295,7 @@
         size_hint: None, 1
         size: 25, 25
         Button:
-            id: options
+            id: uv_options
             # background_down: f'{application_path}/resources/images/more_vert.png'
             # background_normal: f'{application_path}/resources/images/more_vert.png'
             on_release: Logger.info("TODO: open queue options")
