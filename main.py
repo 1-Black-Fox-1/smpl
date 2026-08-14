@@ -101,8 +101,10 @@ class PlayButton(Button):
 class PreviousButton(Button):
     def play_previous(self):
         root = App.get_running_app().root.get_screen("player")
-        # TODO: go back if this first track or time after start < config t
-        root._set_now_playing_pos(root.now_playing_pos - 1)
+        if root.track_pos > root.time_move_to_start or root.first_in_queue():
+            root.sound_provider.seek(0)
+        else:
+            root._set_now_playing_pos(root.now_playing_pos - 1)
 
 
 class NextButton(Button):
@@ -222,6 +224,8 @@ class PlayerScreen(Screen):
     slider_value = NumericProperty(0)
     track_pos = NumericProperty(0)
     length = NumericProperty(0)
+    # TODO: set up it in settings
+    time_move_to_start = NumericProperty(5)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -302,6 +306,11 @@ class PlayerScreen(Screen):
         self.sound_provider.bind(on_play=self.ids.play_button.background_on_play)
         self.sound_provider.bind(on_stop=self.ids.play_button.background_on_pause)
         pass
+
+    def first_in_queue(self) -> bool:
+        if self.now_playing_pos == 0:
+            return True
+        return False
 
     def last_in_queue(self) -> bool:
         if self.queue_length - 1 == self.now_playing_pos:
