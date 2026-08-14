@@ -13,6 +13,8 @@ fi
 
 pyinstaller "${SCRIPT_DIR}/../main.py"\
     --distpath "${SCRIPT_DIR}/../bin"\
+    --workpath "${SCRIPT_DIR}"\
+    --specpath "${SCRIPT_DIR}"\
     --name "smpl"\
     --add-data "${SCRIPT_DIR}/../resources/fonts:./resources/fonts"\
     --add-data "${SCRIPT_DIR}/../resources/images/:./resources/images"\

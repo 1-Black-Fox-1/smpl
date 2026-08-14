@@ -2,5 +2,5 @@ __pycache__
 bin
 music
 venv
-scripts/Simple Player.spec
+scripts/smpl.spec
 scripts/build
