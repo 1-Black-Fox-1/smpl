@@ -456,7 +456,6 @@ class SimplePlayer(App):
 
     def on_stop(self):
         pass
-        # Metadata.clear_cache()
 
 
 if __name__ == '__main__':
