@@ -29,17 +29,17 @@ def get_tracks() -> list[str]:
     queue_length = len(sys.argv)
     if queue_length > 1:
         tracks = tracks_handler(sys.argv[1:])
-    Logger.info(f'Utils: {tracks}')
+    # Logger.info(f'Utils: {tracks}')
     return tracks
 
 def tracks_handler(tracks_path: list[str]) -> list[str]:
     def is_audio(path: Path) -> bool:
         type = guess_type(path)[0]
         if type == None:
-            Logger.info(f"{path, type} is not known by mimetypes")
+            # Logger.info(f"{path, type} is not known by mimetypes")
             return False
         if type.split(sep='/')[0] == 'audio':
-            Logger.info(f"{path} is audio")
+            # Logger.info(f"{path} is audio")
             return True
         return False
 
@@ -47,14 +47,14 @@ def tracks_handler(tracks_path: list[str]) -> list[str]:
     for path in tracks_path:
         path = Path(path)
         if not(path.exists()):
-            Logger.info(f"{path} doesn't exist")
+            # Logger.info(f"{path} doesn't exist")
             continue
         if path.is_file():
             if is_audio(path):
                 tracks.append(str(path))
                 continue
         if path.is_dir():
-            Logger.info(f"{path} is directory")
+            # Logger.info(f"{path} is directory")
             for subpath in path.glob('*'):
                 tracks_path.append(str(subpath))
                 continue
