@@ -55,11 +55,10 @@ class Metadata:
                 Logger.info(f'Metadata: Saving {self.image_path}')
                 self.image.save(self.image_path)
 
-# def clear_cache():
-#     cache_dir = './cache/'
-#     try:
-#         rmtree('./cache/*')
-#     except FileNotFoundError:
-#         Logger.info(f"{cache_dir} doens't exist")
-    # mkdir('./cache/')
-
+# TODO move it to utils and let user access it in settings
+def clear_cache():
+    try:
+        rmtree(cache_dir)
+    except FileNotFoundError:
+        Logger.info(f"{cache_dir} doens't exist")
+    mkdir(cache_dir)
