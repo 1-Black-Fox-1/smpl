@@ -40,7 +40,8 @@ Config.set("input", "mouse", "mouse,multitouch_on_demand")
 
 play_from = 0
 
-# TODO: use outer audio engine, not kivy's
+# TODO: better logging
+# TODO: use outer audio engine, not kivy's?
 
 # TODO: move it to utils
 def formated_time(time: int|float) -> str:
@@ -146,6 +147,7 @@ class OptionsButton(Button):
     pass
 
 
+# TODO: shuffle
 class Options(Popup):
     pass
 
@@ -268,7 +270,6 @@ class PlayerScreen(Screen):
 
     def update_pos(self):
         self.track_pos = self.sound_provider.get_pos()
-        # Logger.info(f'POS: {self.track_pos}')
 
     def update_slider_value(self):
         self.slider_value = self.sound_provider.get_pos()
@@ -372,6 +373,7 @@ class TrackView(RecycleKVIDsDataViewBehavior, BoxLayout, Button):
             player._set_now_playing_pos(self.index)
 
 
+# TODO: move tracks in qv by holding button
 class QueueView(RecycleView):
     hl_pos = NumericProperty()
 
@@ -386,7 +388,7 @@ class QueueView(RecycleView):
                      for i in range(player.queue_length)]
         self.data[player.now_playing_pos]["now_playing"] = True
         self.hl_pos = player.now_playing_pos
-        Logger.info(self.data)
+        # Logger.info(self.data)
 
     def update_hl(self):
         player = App.get_running_app().root.get_screen("player")
