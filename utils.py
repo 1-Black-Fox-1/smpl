@@ -1,5 +1,8 @@
 import sys
 
+from os import mkdir
+from sys import platform
+from shutil import rmtree
 from pathlib import Path
 from mimetypes import guess_type
 
@@ -60,5 +63,31 @@ def tracks_handler(tracks_path: list[str]) -> list[str]:
                 continue
     tracks.sort()
     return tracks
+
+def create_dir(path: Path):
+    try:
+        mkdir(path)
+        Logger.info(f"Created {path}")
+    except:
+        Logger.info(f"{path} already exists")
+
+def get_cache_dir() -> Path:
+    if platform == "linux":
+        return Path.home().joinpath(".cache/smpl/")
+    if platform == "win32":
+        return Path.home().joinpath("AppData/Local/smpl/")
+    if platform == "darwin":
+        return Path.home().joinpath("Library/Caches/smpl/")
+    # if platform == "android":
+    #     return Path(Path.home().joinpath(".cache/smpl"))
+    raise ValueError(f"Cannot get cache dir for {platform}")
+
+def clear_cache():
+    cache_dir = get_cache_dir()
+    try:
+        rmtree(cache_dir)
+    except FileNotFoundError:
+        Logger.info(f"{cache_dir} doens't exist")
+    mkdir(cache_dir)
 
 tracks = get_tracks()
