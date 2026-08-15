@@ -64,13 +64,6 @@ def tracks_handler(tracks_path: list[str]) -> list[str]:
     tracks.sort()
     return tracks
 
-def create_dir(path: Path):
-    try:
-        mkdir(path)
-        Logger.info(f"Created {path}")
-    except:
-        Logger.info(f"{path} already exists")
-
 def get_cache_dir() -> Path:
     if platform == "linux":
         return Path.home().joinpath(".cache/smpl/")

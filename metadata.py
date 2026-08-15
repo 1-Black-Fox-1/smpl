@@ -1,5 +1,6 @@
 from io import BytesIO
 from pathlib import Path
+from os import makedirs
 from os.path import exists
 
 # https://github.com/tinytag/tinytag
@@ -7,10 +8,9 @@ from tinytag import Image, TinyTag
 from kivy.logger import Logger
 from kivy.core.image import Image as CoreImage
 
-from utils import application_path, create_dir, get_cache_dir
+from utils import application_path, get_cache_dir
 
 cache_dir = get_cache_dir()
-create_dir(cache_dir)
 
 #TODO check none for tags before saving image to cache
 class Metadata:
@@ -27,6 +27,6 @@ class Metadata:
             else:
                 Logger.info(f"Metadata: Getting image info {self.image_path}")
                 self.image = CoreImage(BytesIO(self._image.data), ext="jpg")
-                create_dir(Path(cache_dir.joinpath(str(self.tag.artist))))
+                makedirs(Path(self.image_path).parent, exist_ok=True)
                 Logger.info(f"Metadata: Saving {self.image_path}")
                 self.image.save(self.image_path)
