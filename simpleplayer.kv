@@ -16,7 +16,7 @@
     AnchorLayout:
         anchor_x: "left"
         anchor_y: "top"
-        PlayerBackButton:
+        BackButton:
             size_hint: None, None
             size: 25, 25
             border: (0, 0, 0, 0)
@@ -38,11 +38,218 @@
             valign: "top"
             on_release: Factory.Options().open()
 
-# TODO: make better options ui
+<PathView>:
+    pos:
+    Label:
+        id: path_label
+        font_name: app.font
+    Button:
+        id: remove_path
+        size_hint: .2, 1
+        text: "Remove"
+        on_release: root.remove_path()
+
+<PathsView>:
+    paths_amount:
+    viewclass: "PathView"
+    bar_width: dp(0)
+    scroll_wheel_distance: dp(30)
+    RecycleBoxLayout:
+        default_size: None, dp(30)
+        default_size_hint: 1, None
+        height: self.minimum_height
+        orientation: "vertical"
+        size_hint_y: None
+
+<SettingsScreen>:
+    on_pre_enter: self.update_settings_screen()
+    Widget:
+        canvas.before:
+            Color:
+                rgba: Color.background
+            Rectangle:
+                size: root.size
+    BoxLayout:
+        padding: Padding.box
+        orientation: 'vertical'
+        size: root.size
+        spacing: Spacing.box
+
+        TopPanel:
+
+        GridLayout:
+            size_hint: 1, None
+            height: self.minimum_height
+            cols: 2
+            spacing: 10
+            TextInput:
+                id: path_text_input
+                height: 30
+                size_hint_y: None
+                multiline: False
+                font_name: app.font
+                on_text_validate: root.save_music_path()
+            Button:
+                height: 30
+                size_hint_y: None
+                size_hint_x: .2
+                text: "Save"
+                on_release: root.save_music_path()
+        PathsView:
+            id: psv
+        ScanIconButton:
+            # text: "Scan"
+            source: f"{application_path}/resources/images/sync.png"
+            height: 30
+            size_hint_y: None
+            size_hint_x: 0.2
+            fit_mode: "scale-down"
+            # on_release: self.scan()
+            on_release: Logger.info("Boom")
+
+
+<LibraryTopPanel@BoxLayout>:
+    size_hint: Size.top_buttons
+    orientation: "horizontal"
+    AnchorLayout:
+        anchor_x: "left"
+        anchor_y: "top"
+        SettingsButton:
+            size_hint: None, None
+            size: 25, 25
+            border: (0, 0, 0, 0)
+            background_down: f"{application_path}/resources/images/settings.png"
+            background_normal: f"{application_path}/resources/images/settings.png"
+            halign: "left"
+            valign: "top"
+            on_release: self.open_settings()
+    AnchorLayout:
+        anchor_x: "right"
+        anchor_y: "top"
+        OptionsButton:
+            size_hint: None, None
+            size: 25, 25
+            border: (0, 0, 0, 0)
+            background_down: f'{application_path}/resources/images/more_vert.png'
+            background_normal: f'{application_path}/resources/images/more_vert.png'
+            halign: "right"
+            valign: "top"
+            on_release: Factory.Options().open()
+
+<LibraryView>:
+    viewclass: "TrackView"
+    bar_width: dp(0)
+    scroll_wheel_distance: dp(56)
+    RecycleBoxLayout:
+        default_size: None, dp(56)
+        default_size_hint: 1, None
+        height: self.minimum_height
+        orientation: "vertical"
+        size_hint_y: None
+
+<FilterButton>:
+    chosen_filter: False
+    font_name: app.font
+    border: (0, 0, 0, 0)
+    background_color: (0, 0, 0, 0)
+    background_normal: ""
+    canvas.before:
+        Color:
+            rgba: Color.now_playing_background if self.chosen_filter else (0, 0, 0, 0)
+        Rectangle:
+            size: self.size
+            pos: self.pos
+
+<LibraryScreen>:
+    on_pre_enter: self.update_lv()
+    Widget:
+        canvas.before:
+            Color:
+                rgba: Color.background
+            Rectangle:
+                size: root.size
+    BoxLayout:
+        padding: Padding.box
+        orientation: 'vertical'
+        size: root.size
+        spacing: Spacing.box
+
+        LibraryTopPanel:
+
+        LibraryFilter:
+            cols: 3
+            height: dp(28)
+            size_hint: 1, None
+            row_default_height: dp(28)
+            row_force_default: True
+            FilterButton:
+                chosen_filter: True
+                text: "Artists"
+            FilterButton:
+                text: "Albums"
+            FilterButton:
+                text: "Songs"
+
+        LibraryView:
+            id: lv
+
+        LibraryPlayer:
+            cols: 4
+            on_release: self.open_player()
+            border: (0, 0, 0, 0)
+            background_color: (0, 0, 0, 0)
+            background_normal: ""
+            height: dp(56)
+            size_hint: 1, None
+            row_default_height: dp(56)
+            row_force_default: True
+            Image:
+                size_hint: 1, 1
+                source: f"{application_path}/resources/images/no_image.jpg"
+                size: self.texture_size
+                fit_mode: "scale-down"
+            GridLayout:
+                rows: 2
+                Label:
+                    font_size: Size.queue_title_font
+                    shorten: True
+                    shorten_from: "right"
+                    font_name: app.font
+                    text_size: self.size
+                    size: self.texture_size
+                    halign: "left"
+                    valign: "bottom"
+                    text: "title"
+                Label:
+                    font_size: Size.queue_artist_font
+                    shorten: True
+                    shorten_from: "right"
+                    font_name: app.font
+                    text_size: self.size
+                    size: self.texture_size
+                    halign: "left"
+                    valign: "top"
+                    text: "artist"
+            Label:
+                id: duration
+                valign: "center"
+                halign: "center"
+                text_size: self.size
+                size: self.texture_size
+                font_name: app.font
+                text: "duration"
+            IconButton:
+                id: lib_play_button
+                source: f"{application_path}/resources/images/play_circle.png"
+                fit_mode: "scale-down"
+                on_release: self.toggle_play()
+
+
+    # TODO: make better options ui
 <Options>:
     id: options
     size_hint: None, None
-    size: 300, 300
+    size: 300, 150
     title: ""
     separator_height: 0
     # canvas.before:
@@ -203,7 +410,6 @@
                 background_down: f'{application_path}/resources/images/play_circle.png'
                 background_normal: f'{application_path}/resources/images/play_circle.png'
                 on_release: self.toggle_play()
-                # on_press: self.on_press()
             NextButton:
                 id: next_button
                 pos_hint: {"center_x": .75}
