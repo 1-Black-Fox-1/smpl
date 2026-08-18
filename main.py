@@ -3,6 +3,8 @@ import kivy
 
 kivy.require('2.3.1')
 
+from json import dumps, loads
+from pathlib import Path
 from threading import Thread
 
 import kivy.uix.recycleview
@@ -30,7 +32,7 @@ from kivy.uix.recycleview.views import RecycleKVIDsDataViewBehavior
 from kivy.core.audio import SoundLoader
 from kivy.core.window import Window
 
-from utils import application_path, tracks
+from utils import application_path, get_cache_dir, tracks
 from config import Color as Clr, Font, Size
 from metadata import Metadata
 
@@ -49,7 +51,7 @@ def formated_time(time: int|float) -> str:
     secs = int(time - mins * 60)
     return f"{mins}:{secs:02}"
 
-# TODO: if audio device is disconnected stop music
+# TODO: if audio device is disconnected stop music!
 
 class Cover(Image):
     # TODO: tap on image to open it fullscreen
@@ -67,35 +69,23 @@ class PlayButton(Button):
 
     def toggle_play(self):
         root = App.get_running_app().root.get_screen("player")
-        if root.sound_provider.state == 'stop':
+        if root.sound_provider.state == "stop":
             save_pos = root.sound_provider.get_pos()
-            # root.sound_provider.seek(save_pos)
-            # Logger.info(f'SEEK1: {save_pos}')
             root.sound_provider.play()
-            Logger.info('Player: Start playing')
-            # Logger.info(root.sound_provider.get_pos())
+            Logger.info("Player: Start playing")
             Clock.schedule_once(lambda dt: root.sound_provider.seek(save_pos), 0)
-            Logger.info(f'Player: Seek {save_pos}')
-            # Logger.info(root.sound_provider.get_pos())
-            # root.start_time_events(self)
-            # self.text = 'Stop'
-            # self.background_on_start(self) else:
-            # self.text = 'Play'
+            Logger.info(f"Player: Seek {save_pos}")
         else:
             root.sound_provider.stop()
-            # root.stop_time_events()
-            # self.background_on_pause(self)
-            Logger.info('Stop playing')
+            Logger.info("Player: Stop playing")
 
     def background_on_play(self, obj):
-        # Logger.info('playb')
-        self.background_down = f'{application_path}/resources/images/play_circle.png'
-        self.background_normal = f'{application_path}/resources/images/pause_circle.png'
+        self.background_down = f"{application_path}/resources/images/play_circle.png"
+        self.background_normal = f"{application_path}/resources/images/pause_circle.png"
 
     def background_on_pause(self, obj):
-        # Logger.info('pauseb')
-        self.background_down = f'{application_path}/resources/images/play_circle.png'
-        self.background_normal = f'{application_path}/resources/images/play_circle.png'
+        self.background_down = f"{application_path}/resources/images/play_circle.png"
+        self.background_normal = f"{application_path}/resources/images/play_circle.png"
 
 
 class PreviousButton(Button):
@@ -426,6 +416,7 @@ class QueueScreen(Screen):
 class SimplePlayer(App):
     volume = BoundedNumericProperty(1, min=0, max=1,
                                     errorhander=lambda x: 1 if x > 1 else 0)
+    volume_path = Path(get_cache_dir()).joinpath("volume.json")
     repeat = StringProperty("No repeat")
     repeat_variants = {"repeat": "Repeat",
                        "no_repeat": "No repeat",
@@ -452,10 +443,18 @@ class SimplePlayer(App):
             pass
 
     def on_start(self):
-        pass
+        try:
+            with open(self.volume_path, "r") as f:
+                json = f.read()
+                json = loads(json)
+                self.volume = json
+        except FileNotFoundError:
+            pass
 
     def on_stop(self):
-        pass
+        with open(self.volume_path, "w") as f:
+            json = dumps(self.volume)
+            f.write(json)
 
 
 if __name__ == '__main__':
