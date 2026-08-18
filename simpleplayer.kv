@@ -244,8 +244,6 @@
                 fit_mode: "scale-down"
                 on_release: self.toggle_play()
 
-
-    # TODO: make better options ui
 <Options>:
     id: options
     size_hint: None, None
@@ -261,8 +259,10 @@
         orientation: "vertical"
         GridLayout:
             height: self.minimum_height
+            size_hint: 1, None
             rows: 2
             spacing: 20
+            padding: 0, 0, 0, 20
             Label:
                 size_hint_y: None
                 # height: 10
@@ -273,8 +273,8 @@
                 font_name: app.font
                 text_size: self.size
                 size: self.texture_size
-                halign: "left"
-                valign: "top"
+                halign: "center"
+                valign: "center"
             VolumeSlider:
                 size_hint_y: None
                 height: 10
