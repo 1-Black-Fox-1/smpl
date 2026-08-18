@@ -1,4 +1,3 @@
-##!/home/black-fox/smpl/venv/bin/python3
 import kivy
 
 kivy.require('2.3.1')
@@ -6,8 +5,6 @@ kivy.require('2.3.1')
 from json import dumps, loads
 from pathlib import Path
 from threading import Thread
-
-import kivy.uix.recycleview
 
 from pynput import keyboard
 from kivy.app import App
@@ -25,9 +22,12 @@ from kivy.uix.button import Button
 from kivy.uix.slider import Slider
 from kivy.uix.widget import Widget
 from kivy.uix.spinner import Spinner
+from kivy.uix.behaviors import ButtonBehavior
 from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.gridlayout import GridLayout
 from kivy.uix.recycleview import RecycleView
-from kivy.uix.screenmanager import CardTransition, Screen, ScreenManager
+from kivy.uix.screenmanager import (CardTransition, NoTransition, Screen,
+                                    ScreenManager, SlideTransition)
 from kivy.uix.recycleview.views import RecycleKVIDsDataViewBehavior
 from kivy.core.audio import SoundLoader
 from kivy.core.window import Window
@@ -125,14 +125,43 @@ class QueueButton(Button):
     def open_queue(self):
         sm = App.get_running_app().root
         # FIXME: white transition
+        sm.transition = CardTransition()
         sm.transition.direction = "up"
         sm.transition.mode = "push"
         sm.current = "queue"
 
 
-class PlayerBackButton(Button):
+class IconButton(ButtonBehavior, Image):
+    def source_on_play(self, obj):
+        pass
+        self.source = f"{application_path}/resources/images/pause_circle.png"
+
+    def source_on_pause(self, obj):
+        self.source = f"{application_path}/resources/images/play_circle.png"
+
+    def toggle_play(self):
+        root = App.get_running_app().root.get_screen("player")
+        if root.sound_provider.state == "stop":
+            save_pos = root.sound_provider.get_pos()
+            root.sound_provider.play()
+            Logger.info("Player: Start playing")
+            Clock.schedule_once(lambda dt: root.sound_provider.seek(save_pos), 0)
+            Logger.info(f"Player: Seek {save_pos}")
+        else:
+            root.sound_provider.stop()
+            Logger.info("Player: Stop playing")
+
+
+class BackButton(Button):
     def go_back(self):
-        Logger.info("TODO: go back from player")
+        root = App.get_running_app().root
+        screen = root.current
+        if screen == "settings":
+            root.current = "library"
+        elif screen == "player" or "queue":
+            root.transition = SlideTransition()
+            root.transition.direction = "down"
+            root.current = "library"
 
 
 class OptionsButton(Button):
@@ -289,13 +318,18 @@ class PlayerScreen(Screen):
             self.sound_provider.play()
         root = app.root
         screen = root.current
-        if screen == "queue":
+        if screen == "queue" or screen == "library":
             root.get_screen(screen).update_hl()
 
     def bind_play_button(self):
-        self.sound_provider.bind(on_play=self.ids.play_button.background_on_play)
-        self.sound_provider.bind(on_stop=self.ids.play_button.background_on_pause)
-        pass
+        sm = App.get_running_app().root
+        player = sm.get_screen("player")
+        player.sound_provider.bind(on_play=player.ids.play_button.background_on_play)
+        player.sound_provider.bind(on_stop=player.ids.play_button.background_on_pause)
+
+        library = sm.get_screen("library")
+        player.sound_provider.bind(on_play=library.ids.lib_play_button.source_on_play)
+        player.sound_provider.bind(on_stop=library.ids.lib_play_button.source_on_pause)
 
     def first_in_queue(self) -> bool:
         if self.now_playing_pos == 0:
@@ -404,13 +438,121 @@ class QueueScreen(Screen):
     def update_hl(self):
         self.ids.qv.update_hl()
 
-    class CloseQueueButton(Button):
-        def close_queue(self):
-            # FIXME: screen turns a little white when transition works
-            sm = App.get_running_app().root
-            sm.transition.direction = "down"
-            sm.transition.mode = "pop"
-            sm.current = "player"
+
+class CloseQueueButton(Button):
+    def close_queue(self):
+        # FIXME: screen turns a little white when transition works
+        sm = App.get_running_app().root
+        sm.transition = CardTransition()
+        sm.transition.direction = "down"
+        sm.transition.mode = "pop"
+        sm.current = "player"
+
+
+class PathView(RecycleKVIDsDataViewBehavior, BoxLayout):
+    def remove_path(self):
+        settings = App.get_running_app().root.get_screen("settings")
+        psv = settings.ids.psv
+        del psv.data[psv.paths_amount - 1]
+        del settings.music_paths[psv.paths_amount - 1]
+        psv.paths_amount -= 1
+        with open(settings.file_path, "w") as f:
+            json = dumps(settings.music_paths)
+            f.write(json)
+
+
+class PathsView(RecycleView):
+    paths_amount = NumericProperty(0)
+
+
+class SettingsButton(Button):
+    def open_settings(self):
+        sm = App.get_running_app().root
+        sm.transition = NoTransition()
+        sm.current = "settings"
+
+
+class ScanIconButton(ButtonBehavior, Image):
+    pass
+
+class SettingsScreen(Screen):
+    file_path = Path(get_cache_dir()).joinpath("music-paths.json")
+    try:
+        with open(file_path, "r") as f:
+            json = f.read()
+            json = loads(json)
+    except FileNotFoundError:
+        json = []
+    music_paths = ListProperty(json)
+
+    def update_settings_screen(self):
+        self.ids.psv.paths_amount = 0
+        self.ids.psv.data = []
+        for i in range(len(self.music_paths)):
+            self.ids.psv.paths_amount += 1
+            self.ids.psv.data.append({"pos": self.ids.psv.paths_amount,
+                                      "path_label.text": self.music_paths[i]})
+
+    def save_music_path(self):
+        settings = App.get_running_app().root.get_screen("settings")
+        path = settings.ids.path_text_input.text
+        if Path(path).is_dir():
+            settings.ids.path_text_input.text = ""
+            settings.ids.psv.paths_amount += 1
+            settings.ids.psv.data.append({"pos": settings.ids.psv.paths_amount,
+                                          "path_label.text": path})
+            self.music_paths.append(path)
+            with open(self.file_path, "w") as f:
+                json = dumps(self.music_paths)
+                f.write(json)
+        else:
+            Logger.error("Path is invalid")
+
+
+class LibraryView(RecycleView):
+    hl_pos = NumericProperty(0)
+
+    def update_lv(self):
+        player = App.get_running_app().root.get_screen("player")
+        self.data = [{"index": i,
+                      "cover.source": player.metadts[i].image_path,
+                      "title.text": player.metadts[i].tag.title,
+                      "artist.text": player.metadts[i].tag.artist,
+                      "duration.text": formated_time(player.metadts[i].tag.duration),
+                      "now_playing": False}
+                     for i in range(player.queue_length)]
+        self.data[player.now_playing_pos]["now_playing"] = True
+
+    def update_hl(self):
+        player = App.get_running_app().root.get_screen("player")
+        self.data[self.hl_pos]["now_playing"] = False
+        self.data[player.now_playing_pos]["now_playing"] = True
+        self.hl_pos = player.now_playing_pos
+        self.refresh_from_data()
+
+
+class FilterButton(Button):
+    pass
+
+
+class LibraryFilter(GridLayout):
+    pass
+
+
+class LibraryPlayer(GridLayout, Button):
+    def open_player(self):
+        sm = App.get_running_app().root
+        sm.transition = SlideTransition()
+        sm.transition.direction = "up"
+        sm.current = "player"
+
+
+class LibraryScreen(Screen):
+    def update_lv(self):
+        Clock.schedule_once(lambda dt: self.ids.lv.update_lv(), -1)
+
+    def update_hl(self):
+        self.ids.lv.update_hl()
 
 
 class SimplePlayer(App):
@@ -428,6 +570,8 @@ class SimplePlayer(App):
         self.title = "Simple Player"
 
         sm = ScreenManager(transition=CardTransition())
+        sm.add_widget(LibraryScreen(name="library"))
+        sm.add_widget(SettingsScreen(name="settings"))
         sm.add_widget(PlayerScreen(name="player"))
         sm.add_widget(QueueScreen(name="queue"))
         return sm
