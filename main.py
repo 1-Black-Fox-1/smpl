@@ -32,6 +32,7 @@ from kivy.uix.recycleview.views import RecycleKVIDsDataViewBehavior
 from kivy.core.audio import SoundLoader
 from kivy.core.window import Window
 
+from db import create_db, get_all, remove_db
 from utils import application_path, get_cache_dir, tracks
 from config import Color as Clr, Font, Size
 from metadata import Metadata
@@ -39,8 +40,6 @@ from metadata import Metadata
 __version__ = "1.0.0"
 
 Config.set("input", "mouse", "mouse,multitouch_on_demand")
-
-play_from = 0
 
 # TODO: better logging
 # TODO: use outer audio engine, not kivy's?
@@ -233,20 +232,24 @@ class LengthLabel(Label):
 
 class PlayerScreen(Screen):
 
-    queue_length = NumericProperty(len(tracks))
-    now_playing_pos = NumericProperty(play_from)
-    queue = ListProperty(tracks)
-    now_playing = StringProperty(tracks[play_from])
-    sound_provider = ObjectProperty(SoundLoader.load(tracks[play_from]), rebind=True)
-    metadt = ObjectProperty(Metadata(tracks[play_from]), rebind=True)
-    metadts = ListProperty([Metadata(track) for track in tracks])
+    queue = ListProperty(None)
+    queue_length = NumericProperty(None)
+    now_playing_pos = NumericProperty(None)
+    now_playing = ObjectProperty(None)
+    # sound_provider = ObjectProperty(SoundLoader.load(tracks[play_from]), rebind=True)
+    sound_provider = ObjectProperty(rebind=True)
+    # metadt = ObjectProperty(Metadata(tracks[play_from]), rebind=True)
+    # metadts = ListProperty([Metadata(track) for track in tracks])
+    # metadt = ObjectProperty()
+    # metadts = ListProperty()
     slider_value = NumericProperty(0)
     track_pos = NumericProperty(0)
     length = NumericProperty(0)
+    launched = False
     # TODO: set up it in settings
     time_move_to_start = NumericProperty(5)
 
-    def __init__(self, **kwargs):
+    def __init__(self, queue, pos=0, **kwargs):
         super().__init__(**kwargs)
         # TODO: set up player seek time in settings
         self.seek_time = 10
@@ -263,11 +266,12 @@ class PlayerScreen(Screen):
         self.keyboard_listener = Thread(target=self.keyboard_listener_setup,
                                         daemon=True)
         self.keyboard_listener.start()
-        Clock.schedule_once(lambda dt: self.bind_play_button(), -1)
-        Clock.schedule_once(lambda dt: self.bind_update_pos(), -1)
-        Clock.schedule_once(lambda dt:
-                            self.sound_provider.bind(on_stop=self.auto_play_next), -1)
-        Clock.schedule_once(lambda dt: self.set_length(), -1)
+        Clock.schedule_once(lambda dt: self.update_queue_and_now_pos(queue, pos), -1)
+
+    def update_queue_and_now_pos(self, queue, pos=0):
+        self.queue = queue
+        self.now_playing_pos = pos
+
 
     def keyboard_listener_setup(self):
         def on_release(key):
@@ -297,39 +301,54 @@ class PlayerScreen(Screen):
     def update_slider_value(self):
         self.slider_value = self.sound_provider.get_pos()
 
+    def on_queue(self, obj, value):
+        self.queue_length = len(self.queue)
+        Logger.info(f"length: {self.queue_length}")
+
     def on_now_playing_pos(self, obj, value):
         self.now_playing = self.queue[self.now_playing_pos]
-        prev_track_state = self.sound_provider.state
-        prev_track_loop = self.sound_provider.loop
-        if prev_track_state == "play":
-            self.sound_provider.stop()
-        self.sound_provider.unload()
-        self.sound_provider = SoundLoader.load(self.now_playing)
-        self.metadt = Metadata(self.now_playing)
-        Logger.info(f"New sound {self.metadt.tag.title}")
+        if self.sound_provider is not None:
+            prev_track_state = self.sound_provider.state
+            prev_track_loop = self.sound_provider.loop
+            if prev_track_state == "play":
+                self.sound_provider.stop()
+            self.sound_provider.unload()
+        else:
+            prev_track_state = None
+            prev_track_loop = None
+        self.sound_provider = SoundLoader.load(self.now_playing.file)
+        Logger.info(f"Player: New song {self.now_playing.title}")
         self.set_length()
         self.bind_play_button()
         self.bind_update_pos()
         self.sound_provider.bind(on_stop=self.auto_play_next)
         app = App.get_running_app()
         self.sound_provider.volume = app.volume
-        self.sound_provider.loop = prev_track_loop
+        if prev_track_loop is not None:
+            self.sound_provider.loop = prev_track_loop
         if prev_track_state == "play":
             self.sound_provider.play()
         root = app.root
         screen = root.current
-        if screen == "queue" or screen == "library":
-            root.get_screen(screen).update_hl()
+        root.get_screen(screen).update_hl()
+        if not self.launched:
+            Clock.schedule_once(lambda dt: self.bind_play_button(), -1)
+            Clock.schedule_once(lambda dt: self.bind_update_pos(), -1)
+            Clock.schedule_once(lambda dt:
+                                self.sound_provider.bind(on_stop=self.auto_play_next), -1)
+            Clock.schedule_once(lambda dt: self.set_length(), -1)
+            self.launched = True
 
     def bind_play_button(self):
         sm = App.get_running_app().root
         player = sm.get_screen("player")
+        # if player.sound_provider is not None:
         player.sound_provider.bind(on_play=player.ids.play_button.background_on_play)
         player.sound_provider.bind(on_stop=player.ids.play_button.background_on_pause)
 
-        library = sm.get_screen("library")
-        player.sound_provider.bind(on_play=library.ids.lib_play_button.source_on_play)
-        player.sound_provider.bind(on_stop=library.ids.lib_play_button.source_on_pause)
+        app = App.get_running_app()
+        player.sound_provider.bind(on_play=app.lib_player.ids.lib_play_button.source_on_play)
+        player.sound_provider.bind(on_stop=app.lib_player.ids.lib_play_button.source_on_pause)
 
     def first_in_queue(self) -> bool:
         if self.now_playing_pos == 0:
@@ -364,6 +383,7 @@ class PlayerScreen(Screen):
 
     def bind_update_pos(self):
         Logger.info('staring binding events')
+        # if self.sound_provider is not None:
         self.sound_provider.bind(on_play=self.start_time_events)
         self.sound_provider.bind(on_stop=self.stop_time_events)
 
@@ -401,9 +421,25 @@ class TrackView(RecycleKVIDsDataViewBehavior, BoxLayout, Button):
     index = NumericProperty()
 
     def play_track(self):
-        player = App.get_running_app().root.get_screen("player")
-        if not self.now_playing:
-            player._set_now_playing_pos(self.index)
+        app = App.get_running_app()
+        screen = app.root.current
+        if screen == "queue":
+            player = app.root.get_screen("player")
+            if not self.now_playing:
+                player._set_now_playing_pos(self.index)
+        elif screen == "library":
+            library = app.root.get_screen("library")
+            if app.lib_player is None:
+                lib_player = LibraryPlayer()
+                app.lib_player = lib_player
+                library.ids.lib_box.add_widget(lib_player)
+                queue = [app.songs[self.index]]
+                player = PlayerScreen(name="player", queue=queue)
+                app.root.add_widget(player)
+            else:
+                player = app.root.get_screen("player")
+                queue = [app.songs[self.index]]
+                player.queue = queue
 
 
 # TODO: move tracks in qv by holding button
@@ -473,7 +509,10 @@ class SettingsButton(Button):
 
 
 class ScanIconButton(ButtonBehavior, Image):
-    pass
+    def scan(self):
+        settings = App.get_running_app().root.get_screen("settings")
+        create_db(settings.music_paths)
+
 
 class SettingsScreen(Screen):
     file_path = Path(get_cache_dir()).joinpath("music-paths.json")
@@ -513,15 +552,15 @@ class LibraryView(RecycleView):
     hl_pos = NumericProperty(0)
 
     def update_lv(self):
-        player = App.get_running_app().root.get_screen("player")
+        app = App.get_running_app()
         self.data = [{"index": i,
-                      "cover.source": player.metadts[i].image_path,
-                      "title.text": player.metadts[i].tag.title,
-                      "artist.text": player.metadts[i].tag.artist,
-                      "duration.text": formated_time(player.metadts[i].tag.duration),
+                      "cover.source": app.songs[i].image,
+                      "title.text": app.songs[i].title,
+                      "artist.text": app.songs[i].artist,
+                      "duration.text": formated_time(app.songs[i].length),
                       "now_playing": False}
-                     for i in range(player.queue_length)]
-        self.data[player.now_playing_pos]["now_playing"] = True
+                     for i in range(len(app.songs))]
+        Logger.info(f"songs - {app.songs}")
 
     def update_hl(self):
         player = App.get_running_app().root.get_screen("player")
@@ -563,6 +602,11 @@ class SimplePlayer(App):
     repeat_variants = {"repeat": "Repeat",
                        "no_repeat": "No repeat",
                        "repeat_queue": "Repeat queue"}
+    songs = ListProperty()
+    lib_player = ObjectProperty(None)
+
+    def update_songs(self, songs):
+        self.songs = songs
 
     def build(self):
         self.font = Font.main
@@ -572,8 +616,8 @@ class SimplePlayer(App):
         sm = ScreenManager(transition=CardTransition())
         sm.add_widget(LibraryScreen(name="library"))
         sm.add_widget(SettingsScreen(name="settings"))
-        sm.add_widget(PlayerScreen(name="player"))
-        sm.add_widget(QueueScreen(name="queue"))
+        # sm.add_widget(PlayerScreen(name="player"))
+        # sm.add_widget(QueueScreen(name="queue"))
         return sm
 
     def on_repeat(self, obj, value):
@@ -586,6 +630,9 @@ class SimplePlayer(App):
             player.sound_provider.loop = False
             pass
 
+    def update_lv(self):
+        self.root.get_screen("library").ids.lv.update_lv()
+
     def on_start(self):
         try:
             with open(self.volume_path, "r") as f:
@@ -594,6 +641,8 @@ class SimplePlayer(App):
                 self.volume = json
         except FileNotFoundError:
             pass
+        Clock.schedule_once(lambda dt: self.update_songs(get_all()), -1)
+        Clock.schedule_once(lambda dt: self.update_lv(), -1)
 
     def on_stop(self):
         with open(self.volume_path, "w") as f:
