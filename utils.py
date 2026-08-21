@@ -35,17 +35,17 @@ def get_tracks() -> list[str]:
     # Logger.info(f'Utils: {tracks}')
     return tracks
 
-def tracks_handler(tracks_path: list[str]) -> list[str]:
-    def is_audio(path: Path) -> bool:
-        type = guess_type(path)[0]
-        if type == None:
-            # Logger.info(f"{path, type} is not known by mimetypes")
-            return False
-        if type.split(sep='/')[0] == 'audio':
-            # Logger.info(f"{path} is audio")
-            return True
+def is_audio(path: Path) -> bool:
+    type = guess_type(path)[0]
+    if type == None:
+        # Logger.info(f"{path, type} is not known by mimetypes")
         return False
+    if type.split(sep='/')[0] == 'audio':
+        # Logger.info(f"{path} is audio")
+        return True
+    return False
 
+def tracks_handler(tracks_path: list[str]) -> list[str]:
     tracks: list[str] = []
     for path in tracks_path:
         path = Path(path)
