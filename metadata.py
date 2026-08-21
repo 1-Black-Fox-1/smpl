@@ -12,8 +12,9 @@ from utils import application_path, get_cache_dir
 
 cache_dir = get_cache_dir()
 
-#TODO check none for tags before saving image to cache
-class Metadata:
+# TODO check none for tags before saving image to cache
+# TODO RawMetadata can generate None.jpg
+class RawMetadata:
 
     def __init__(self, path_to_file: Path):
         self.tag: TinyTag = TinyTag.get(path_to_file)
@@ -30,3 +31,27 @@ class Metadata:
                 makedirs(Path(self.image_path).parent, exist_ok=True)
                 Logger.info(f"Metadata: Saving {self.image_path}")
                 self.image.save(self.image_path)
+
+
+class Metadata:
+    # def __init__(self, album_pos, album, title, artist, length, year, image, file):
+    #     self.album_pos = album_pos
+    #     self.album = album
+    #     self.title = title
+    #     self.artist = artist
+    #     self.length = length
+    #     self.year = year
+    #     self.image = image
+    #     self.file = file
+
+    def __init__(self, metadata):
+        self.album_pos = metadata[0]
+        self.album = metadata[1]
+        self.title = metadata[2]
+        self.artist = metadata[3]
+        self.length = metadata[4]
+        self.year = metadata[5]
+        self.image = metadata[6]
+        self.file = metadata[7]
+        self.id = metadata[8]
+

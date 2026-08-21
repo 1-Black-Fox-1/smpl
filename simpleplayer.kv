@@ -98,14 +98,12 @@
         PathsView:
             id: psv
         ScanIconButton:
-            # text: "Scan"
             source: f"{application_path}/resources/images/sync.png"
             height: 30
             size_hint_y: None
             size_hint_x: 0.2
             fit_mode: "scale-down"
-            # on_release: self.scan()
-            on_release: Logger.info("Boom")
+            on_release: self.scan()
 
 
 <LibraryTopPanel@BoxLayout>:
@@ -160,6 +158,56 @@
             size: self.size
             pos: self.pos
 
+<LibraryPlayer>:
+    cols: 4
+    on_release: self.open_player()
+    border: (0, 0, 0, 0)
+    background_color: (0, 0, 0, 0)
+    background_normal: ""
+    height: dp(56)
+    size_hint: 1, None
+    row_default_height: dp(56)
+    row_force_default: True
+    Image:
+        size_hint: 1, 1
+        source: f"{application_path}/resources/images/no_image.jpg"
+        size: self.texture_size
+        fit_mode: "scale-down"
+    GridLayout:
+        rows: 2
+        Label:
+            font_size: Size.queue_title_font
+            shorten: True
+            shorten_from: "right"
+            font_name: app.font
+            text_size: self.size
+            size: self.texture_size
+            halign: "left"
+            valign: "bottom"
+            text: "title"
+        Label:
+            font_size: Size.queue_artist_font
+            shorten: True
+            shorten_from: "right"
+            font_name: app.font
+            text_size: self.size
+            size: self.texture_size
+            halign: "left"
+            valign: "top"
+            text: "artist"
+    Label:
+        valign: "center"
+        halign: "center"
+        text_size: self.size
+        size: self.texture_size
+        font_name: app.font
+        text: "duration"
+    IconButton:
+        id: lib_play_button
+        source: f"{application_path}/resources/images/play_circle.png"
+        fit_mode: "scale-down"
+        on_release: self.toggle_play()
+
 <LibraryScreen>:
     on_pre_enter: self.update_lv()
     Widget:
@@ -169,6 +217,7 @@
             Rectangle:
                 size: root.size
     BoxLayout:
+        id: lib_box
         padding: Padding.box
         orientation: 'vertical'
         size: root.size
@@ -192,57 +241,6 @@
 
         LibraryView:
             id: lv
-
-        LibraryPlayer:
-            cols: 4
-            on_release: self.open_player()
-            border: (0, 0, 0, 0)
-            background_color: (0, 0, 0, 0)
-            background_normal: ""
-            height: dp(56)
-            size_hint: 1, None
-            row_default_height: dp(56)
-            row_force_default: True
-            Image:
-                size_hint: 1, 1
-                source: f"{application_path}/resources/images/no_image.jpg"
-                size: self.texture_size
-                fit_mode: "scale-down"
-            GridLayout:
-                rows: 2
-                Label:
-                    font_size: Size.queue_title_font
-                    shorten: True
-                    shorten_from: "right"
-                    font_name: app.font
-                    text_size: self.size
-                    size: self.texture_size
-                    halign: "left"
-                    valign: "bottom"
-                    text: "title"
-                Label:
-                    font_size: Size.queue_artist_font
-                    shorten: True
-                    shorten_from: "right"
-                    font_name: app.font
-                    text_size: self.size
-                    size: self.texture_size
-                    halign: "left"
-                    valign: "top"
-                    text: "artist"
-            Label:
-                id: duration
-                valign: "center"
-                halign: "center"
-                text_size: self.size
-                size: self.texture_size
-                font_name: app.font
-                text: "duration"
-            IconButton:
-                id: lib_play_button
-                source: f"{application_path}/resources/images/play_circle.png"
-                fit_mode: "scale-down"
-                on_release: self.toggle_play()
 
 <Options>:
     id: options
@@ -311,7 +309,7 @@
 
 # TODO: https://kivy.org/doc/stable/api-kivy.graphics.boxshadow.html
         Cover:
-            source: root.metadt.image_path
+            source: root.now_playing.image if root.now_playing is not None else None
             size_hint: Size.image
         BoxLayout:
             size_hint: Size.title
@@ -320,7 +318,7 @@
             TitleLabel:
                 shorten: True
                 shorten_from: 'right'
-                text: root.metadt.tag.title
+                text: root.now_playing.title if root.now_playing is not None else ""
                 font_size: Size.title_font
                 size: self.texture_size
                 halign: "left"
@@ -331,7 +329,7 @@
             ArtistLabel:
                 shorten: True
                 shorten_from: 'right'
-                text: root.metadt.tag.artist
+                text: root.now_playing.artist if root.now_playing is not None else ""
                 font_size: Size.artist_font
                 size: self.texture_size
                 halign: "left"
