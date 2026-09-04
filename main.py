@@ -32,7 +32,7 @@ from kivy.uix.recycleview.views import RecycleKVIDsDataViewBehavior
 from kivy.core.audio import SoundLoader
 from kivy.core.window import Window
 
-from db import create_db, get_all, remove_db
+from db import create_db, db_exists, get_all, remove_db
 from utils import application_path, get_cache_dir, tracks
 from config import Color as Clr, Font, Size
 from metadata import Metadata
@@ -43,6 +43,7 @@ Config.set("input", "mouse", "mouse,multitouch_on_demand")
 
 # TODO: better logging
 # TODO: use outer audio engine, not kivy's?
+# TODO: sync json one time at exit with all config data
 
 # TODO: move it to utils
 def formated_time(time: int|float) -> str:
@@ -511,6 +512,8 @@ class SettingsButton(Button):
 class ScanIconButton(ButtonBehavior, Image):
     def scan(self):
         settings = App.get_running_app().root.get_screen("settings")
+        if db_exists():
+            remove_db()
         create_db(settings.music_paths)
 
 
@@ -641,7 +644,8 @@ class SimplePlayer(App):
                 self.volume = json
         except FileNotFoundError:
             pass
-        Clock.schedule_once(lambda dt: self.update_songs(get_all()), -1)
+        if db_exists():
+            Clock.schedule_once(lambda dt: self.update_songs(get_all()), -1)
         Clock.schedule_once(lambda dt: self.update_lv(), -1)
 
     def on_stop(self):
