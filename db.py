@@ -16,7 +16,7 @@ def create_db(audio_paths: list[Path|str]):
         audio_path = Path(audio_path)
         for path in audio_path.rglob('*'):
             if is_audio(path):
-                mt = Metadata(path)
+                mt = RawMetadata(path)
                 if mt.tag.track is None:
                     album_pos = 0
                 else:
@@ -62,6 +62,19 @@ def remove_db():
         db_path.unlink()
     except FileNotFoundError:
         Logger.error(f"DB: {db_path} doesn't exist")
+
+
+def db_exists() -> bool:
+    con = connect(db_path)
+    cur = con.cursor()
+    res = cur.execute("SELECT name FROM sqlite_master")
+    res = res.fetchone()
+    if res is None:
+        con.close()
+        return False
+    else:
+        con.close()
+        return True
 
 
 def get_all() -> list[Metadata]:
