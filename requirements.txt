@@ -12,6 +12,7 @@ Kivy==2.3.1
 Kivy-Garden==0.1.5
 packaging==26.2
 pexpect==4.9.0
+pillow==10.4.0
 ptyprocess==0.7.0
 Pygments==2.20.0
 pyinstaller==6.20.0
