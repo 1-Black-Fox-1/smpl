@@ -13,8 +13,8 @@ from kivy.config import Config
 from kivy.logger import Logger
 from kivy.graphics import Color, Rectangle
 from kivy.properties import (BooleanProperty, BoundedNumericProperty,
-                             ListProperty, NumericProperty, ObjectProperty,
-                             StringProperty)
+                             DictProperty, ListProperty, NumericProperty,
+                             ObjectProperty, StringProperty)
 from kivy.uix.image import Image
 from kivy.uix.label import Label
 from kivy.uix.popup import Popup
@@ -565,6 +565,7 @@ class SettingsScreen(Screen):
 
 class LibraryView(RecycleView):
     hl_pos = NumericProperty(0)
+    row_ids = DictProperty()
 
     def update_lv(self):
         app = App.get_running_app()
@@ -575,13 +576,19 @@ class LibraryView(RecycleView):
                       "duration.text": formated_time(app.songs[i].length),
                       "now_playing": False}
                      for i in range(len(app.songs))]
+        self.row_ids = {song.id: i for i, song in enumerate(app.songs)}
+        try:
+            self.update_hl()
+        except Exception:
+            pass
         Logger.info(f"songs - {app.songs}")
 
     def update_hl(self):
         player = App.get_running_app().root.get_screen("player")
         self.data[self.hl_pos]["now_playing"] = False
-        self.data[player.now_playing_pos]["now_playing"] = True
-        self.hl_pos = player.now_playing_pos
+        track_id = player.now_playing.id
+        self.hl_pos = self.row_ids[track_id]
+        self.data[self.hl_pos]["now_playing"] = True
         self.refresh_from_data()
 
 
