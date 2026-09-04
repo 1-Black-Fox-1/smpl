@@ -430,17 +430,29 @@ class TrackView(RecycleKVIDsDataViewBehavior, BoxLayout, Button):
                 player._set_now_playing_pos(self.index)
         elif screen == "library":
             library = app.root.get_screen("library")
-            if app.lib_player is None:
-                lib_player = LibraryPlayer()
-                app.lib_player = lib_player
-                library.ids.lib_box.add_widget(lib_player)
-                queue = [app.songs[self.index]]
-                player = PlayerScreen(name="player", queue=queue)
-                app.root.add_widget(player)
-            else:
-                player = app.root.get_screen("player")
-                queue = [app.songs[self.index]]
-                player.queue = queue
+            try:
+                library.ids.lib_box.remove_widget(app.lib_player)
+                app.root.remove_widget(app.player)
+            except AttributeError:
+                pass
+            queue = [app.songs[self.index]]
+            app.player = PlayerScreen(name="player", queue=queue)
+            app.root.add_widget(app.player)
+            lib_player = LibraryPlayer()
+            app.lib_player = lib_player
+            library.ids.lib_box.add_widget(lib_player)
+
+            # if app.lib_player is None:
+            #     lib_player = LibraryPlayer()
+            #     app.lib_player = lib_player
+            #     library.ids.lib_box.add_widget(lib_player)
+            #     queue = [app.songs[self.index]]
+            #     player = PlayerScreen(name="player", queue=queue)
+            #     app.root.add_widget(player)
+            # else:
+            #     player = app.root.get_screen("player")
+            #     queue = [app.songs[self.index]]
+            #     player.queue = queue
 
 
 # TODO: move tracks in qv by holding button
@@ -607,6 +619,7 @@ class SimplePlayer(App):
                        "repeat_queue": "Repeat queue"}
     songs = ListProperty()
     lib_player = ObjectProperty(None)
+    player = ObjectProperty(None)
 
     def update_songs(self, songs):
         self.songs = songs
