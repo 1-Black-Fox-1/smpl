@@ -170,7 +170,7 @@
     row_force_default: True
     Image:
         size_hint: 1, 1
-        source: f"{application_path}/resources/images/no_image.jpg"
+        source: app.player.now_playing.image
         size: self.texture_size
         fit_mode: "scale-down"
     GridLayout:
@@ -184,7 +184,7 @@
             size: self.texture_size
             halign: "left"
             valign: "bottom"
-            text: "title"
+            text: app.player.now_playing.title
         Label:
             font_size: Size.queue_artist_font
             shorten: True
@@ -194,14 +194,14 @@
             size: self.texture_size
             halign: "left"
             valign: "top"
-            text: "artist"
+            text: app.player.now_playing.artist
     Label:
         valign: "center"
         halign: "center"
         text_size: self.size
         size: self.texture_size
         font_name: app.font
-        text: "played/duration"
+        text: root.track_pos
     IconButton:
         id: lib_play_button
         source: f"{application_path}/resources/images/play_circle.png"

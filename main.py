@@ -268,11 +268,21 @@ class PlayerScreen(Screen):
                                         daemon=True)
         self.keyboard_listener.start()
         Clock.schedule_once(lambda dt: self.update_queue_and_now_pos(queue, pos), -1)
+        # Should be in lib player
+        self.update_lib_pos_event = Clock.schedule_interval(lambda dt:
+                                                            self.update_lib_pos_value(),
+                                                            update_slider_frequency)
+        Clock.schedule_once(lambda dt:
+                            self.update_lib_pos_event.cancel(),
+                            update_slider_frequency)
+
+    def update_lib_pos_value(self):
+        app = App.get_running_app()
+        app.lib_player.track_pos = f"{formated_time(app.player.track_pos)}/{formated_time(app.player.now_playing.length)}"
 
     def update_queue_and_now_pos(self, queue, pos=0):
         self.queue = queue
         self.now_playing_pos = pos
-
 
     def keyboard_listener_setup(self):
         def on_release(key):
@@ -346,10 +356,13 @@ class PlayerScreen(Screen):
         # if player.sound_provider is not None:
         player.sound_provider.bind(on_play=player.ids.play_button.background_on_play)
         player.sound_provider.bind(on_stop=player.ids.play_button.background_on_pause)
+        # Should be in lib player actually
+        Clock.schedule_once(lambda dt: bind_lib_player(), -1)
 
-        app = App.get_running_app()
-        player.sound_provider.bind(on_play=app.lib_player.ids.lib_play_button.source_on_play)
-        player.sound_provider.bind(on_stop=app.lib_player.ids.lib_play_button.source_on_pause)
+        def bind_lib_player():
+            app = App.get_running_app()
+            player.sound_provider.bind(on_play=app.lib_player.ids.lib_play_button.source_on_play)
+            player.sound_provider.bind(on_stop=app.lib_player.ids.lib_play_button.source_on_pause)
 
     def first_in_queue(self) -> bool:
         if self.now_playing_pos == 0:
@@ -392,11 +405,13 @@ class PlayerScreen(Screen):
         Logger.info('stop_events')
         self.update_slider_value_event.cancel()
         self.update_pos_event.cancel()
+        self.update_lib_pos_event.cancel()
 
     def start_time_events(self, obj):
         Logger.info('start_events')
         self.update_slider_value_event()
         self.update_pos_event()
+        self.update_lib_pos_event()
 
     # TODO: remove _ and add it to handlers
     def _set_now_playing_pos(self, value):
@@ -438,9 +453,15 @@ class TrackView(RecycleKVIDsDataViewBehavior, BoxLayout, Button):
             queue = [app.songs[self.index]]
             app.player = PlayerScreen(name="player", queue=queue)
             app.root.add_widget(app.player)
-            lib_player = LibraryPlayer()
-            app.lib_player = lib_player
-            library.ids.lib_box.add_widget(lib_player)
+
+            def create_lib_player():
+                app = App.get_running_app()
+                library = app.root.get_screen("library")
+                lib_player = LibraryPlayer()
+                app.lib_player = lib_player
+                library.ids.lib_box.add_widget(lib_player)
+
+            Clock.schedule_once(lambda dt: create_lib_player(), -1)
 
             # if app.lib_player is None:
             #     lib_player = LibraryPlayer()
@@ -601,6 +622,8 @@ class LibraryFilter(GridLayout):
 
 
 class LibraryPlayer(GridLayout, Button):
+    track_pos = StringProperty("0:00/0:00")
+
     def open_player(self):
         sm = App.get_running_app().root
         sm.transition = SlideTransition()
