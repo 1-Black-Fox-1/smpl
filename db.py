@@ -1,3 +1,4 @@
+from os import makedirs
 from pathlib import Path
 from sqlite3 import connect
 
@@ -65,6 +66,7 @@ def remove_db():
 
 
 def db_exists() -> bool:
+    makedirs(db_path.parent, exist_ok=True)
     con = connect(db_path)
     cur = con.cursor()
     res = cur.execute("SELECT name FROM sqlite_master")
