@@ -462,6 +462,7 @@ class TrackView(RecycleKVIDsDataViewBehavior, BoxLayout, Button):
                 library.ids.lib_box.add_widget(lib_player)
 
             Clock.schedule_once(lambda dt: create_lib_player(), -1)
+            Clock.schedule_once(lambda dt: app.player.sound_provider.play(), -1)
 
             # if app.lib_player is None:
             #     lib_player = LibraryPlayer()
