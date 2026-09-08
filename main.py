@@ -347,7 +347,8 @@ class PlayerScreen(Screen):
             self.sound_provider.play()
         root = app.root
         screen = root.current
-        root.get_screen(screen).update_hl()
+        if screen == "library" or screen == "queue":
+            root.get_screen(screen).update_hl()
         if not self.launched:
             Clock.schedule_once(lambda dt: self.bind_play_button(), -1)
             Clock.schedule_once(lambda dt: self.bind_update_pos(), -1)
