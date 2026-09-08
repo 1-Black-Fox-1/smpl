@@ -475,7 +475,15 @@ class TrackView(RecycleKVIDsDataViewBehavior, BoxLayout, Button):
                 app.lib_player = lib_player
                 library.ids.lib_box.add_widget(lib_player)
 
-            Clock.schedule_once(lambda dt: create_lib_player(), -1)
+            def create_queue_screen():
+                app = App.get_running_app()
+                app.queue_screen = QueueScreen(name="queue")
+                app.root.add_widget(app.queue_screen)
+
+            if app.lib_player is None:
+                Clock.schedule_once(lambda dt: create_lib_player(), -1)
+            if app.queue_screen is None:
+                Clock.schedule_once(lambda dt: create_queue_screen(), -1)
             Clock.schedule_once(lambda dt: app.player.sound_provider.play(), 1)
 
             # if app.lib_player is None:
@@ -498,10 +506,10 @@ class QueueView(RecycleView):
     def update_qv(self):
         player = App.get_running_app().root.get_screen("player")
         self.data = [{"index": i,
-                      "cover.source": player.metadts[i].image_path,
-                      "title.text": player.metadts[i].tag.title,
-                      "artist.text": player.metadts[i].tag.artist,
-                      "duration.text": formated_time(player.metadts[i].tag.duration),
+                      "cover.source": player.queue[i].image,
+                      "title.text": player.queue[i].title,
+                      "artist.text": player.queue[i].artist,
+                      "duration.text": formated_time(player.queue[i].length),
                       "now_playing": False}
                      for i in range(player.queue_length)]
         self.data[player.now_playing_pos]["now_playing"] = True
@@ -665,6 +673,7 @@ class SimplePlayer(App):
     songs = ListProperty()
     lib_player = ObjectProperty(None)
     player = ObjectProperty(None)
+    queue_screen = ObjectProperty(None)
 
     def update_songs(self, songs):
         self.songs = songs
