@@ -278,7 +278,7 @@ class PlayerScreen(Screen):
 
     def stop_and_delete(self):
         self.sound_provider.stop()
-        self.sound_proveder.unload()
+        self.sound_provider.unload()
 
     def update_lib_pos_value(self):
         app = App.get_running_app()
@@ -439,7 +439,7 @@ class PlayerScreen(Screen):
 class TrackView(RecycleKVIDsDataViewBehavior, BoxLayout, Button):
     now_playing = BooleanProperty(False)
     index = NumericProperty()
-    k = 0
+
     def play_track(self):
         app = App.get_running_app()
         screen = app.root.current
@@ -451,15 +451,14 @@ class TrackView(RecycleKVIDsDataViewBehavior, BoxLayout, Button):
             library = app.root.get_screen("library")
             try:
                 library.ids.lib_box.remove_widget(app.lib_player)
-                app.root.remove_widget(app.player)
             except AttributeError:
                 pass
             queue = [app.songs[self.index]]
             # We are leaking here or something
             # Need to create one instance and then update it??
-            if self.k > 0:
+            if app.player is not None:
                 app.player.stop_and_delete()
-            self.k += 1
+                app.root.remove_widget(app.player)
             app.player = PlayerScreen(name="player", queue=queue)
             app.root.add_widget(app.player)
 
