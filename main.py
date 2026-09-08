@@ -276,6 +276,10 @@ class PlayerScreen(Screen):
                             self.update_lib_pos_event.cancel(),
                             update_slider_frequency)
 
+    def stop_and_delete(self):
+        self.sound_provider.stop()
+        self.sound_proveder.unload()
+
     def update_lib_pos_value(self):
         app = App.get_running_app()
         app.lib_player.track_pos = f"{formated_time(app.player.track_pos)}/{formated_time(app.player.now_playing.length)}"
@@ -435,7 +439,7 @@ class PlayerScreen(Screen):
 class TrackView(RecycleKVIDsDataViewBehavior, BoxLayout, Button):
     now_playing = BooleanProperty(False)
     index = NumericProperty()
-
+    k = 0
     def play_track(self):
         app = App.get_running_app()
         screen = app.root.current
@@ -451,6 +455,11 @@ class TrackView(RecycleKVIDsDataViewBehavior, BoxLayout, Button):
             except AttributeError:
                 pass
             queue = [app.songs[self.index]]
+            # We are leaking here or something
+            # Need to create one instance and then update it??
+            if self.k > 1:
+                app.player.stop_and_delete()
+            self.k += 1
             app.player = PlayerScreen(name="player", queue=queue)
             app.root.add_widget(app.player)
 
