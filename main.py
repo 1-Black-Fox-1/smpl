@@ -457,7 +457,7 @@ class TrackView(RecycleKVIDsDataViewBehavior, BoxLayout, Button):
             queue = [app.songs[self.index]]
             # We are leaking here or something
             # Need to create one instance and then update it??
-            if self.k > 1:
+            if self.k > 0:
                 app.player.stop_and_delete()
             self.k += 1
             app.player = PlayerScreen(name="player", queue=queue)
