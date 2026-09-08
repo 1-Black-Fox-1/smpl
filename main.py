@@ -286,6 +286,8 @@ class PlayerScreen(Screen):
 
     def update_queue_and_now_pos(self, queue, pos=0):
         self.queue = queue
+        if self.now_playing_pos == pos:
+            self.on_now_playing_pos(self, pos)
         self.now_playing_pos = pos
 
     def keyboard_listener_setup(self):
@@ -448,19 +450,23 @@ class TrackView(RecycleKVIDsDataViewBehavior, BoxLayout, Button):
             if not self.now_playing:
                 player._set_now_playing_pos(self.index)
         elif screen == "library":
-            library = app.root.get_screen("library")
-            try:
-                library.ids.lib_box.remove_widget(app.lib_player)
-            except AttributeError:
-                pass
-            queue = [app.songs[self.index]]
+            # library = app.root.get_screen("library")
+            # try:
+            #     library.ids.lib_box.remove_widget(app.lib_player)
+            # except AttributeError:
+            #     pass
+            queue = app.songs
             # We are leaking here or something
             # Need to create one instance and then update it??
             if app.player is not None:
                 app.player.stop_and_delete()
-                app.root.remove_widget(app.player)
-            app.player = PlayerScreen(name="player", queue=queue)
-            app.root.add_widget(app.player)
+                app.player.update_queue_and_now_pos(queue, self.index)
+            else:
+                # print(self.index)
+                # exit()
+                app.player = PlayerScreen(name="player", queue=queue, pos=self.index)
+                app.root.add_widget(app.player)
+                # app.root.remove_widget(app.player)
 
             def create_lib_player():
                 app = App.get_running_app()
