@@ -575,6 +575,10 @@ class ScanIconButton(ButtonBehavior, Image):
         if db_exists():
             remove_db()
         create_db(settings.music_paths)
+        app = App.get_running_app()
+        app.update_songs(get_all_tracks())
+        app.update_albums(get_all_albums())
+        app.update_artists(get_all_artists())
 
 
 class SettingsScreen(Screen):
