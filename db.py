@@ -79,15 +79,82 @@ def db_exists() -> bool:
         return True
 
 
-def get_all() -> list[Metadata]:
+def get_all_tracks() -> list[Metadata]:
     con = connect(db_path)
     cur = con.cursor()
-    query = cur.execute("SELECT *, rowid FROM song")
+    query = cur.execute("SELECT *, rowid FROM song ORDER BY title")
     res = query.fetchall()
     for i in range(len(res)):
-        print(res[i])
+        # print(res[i])
         res[i] = Metadata(res[i])
-    Logger.info(f"DB: res - {res}, type - {type(res)}")
+    # Logger.info(f"DB: res - {res}, type - {type(res)}")
+    con.close()
+    return res
+
+
+class Album:
+    def __init__(self, title: str, year: int, image: Path|str, artist: str, tracks_amount=0, duration=0):
+        self.title: str = title
+        self.year: int = year
+        self.image: str = str(image)
+        self.artist: str = artist
+
+        self.tracks_amount: int = tracks_amount
+        self.duration: float = duration
+
+
+def get_all_albums() -> list[Album]:
+    con = connect(db_path)
+    cur = con.cursor()
+    query = cur.execute("SELECT DISTINCT album, year, image, artist FROM song ORDER BY album")
+    res = query.fetchall()
+    for i, album in enumerate(res):
+        res[i] = Album(album[0], album[1], album[2], album[3])
+    con.close()
+    return res
+
+
+class Artist:
+    def __init__(self, name: str, image: Path|str, album_amount: int = 0):
+        self.name = name
+        self.image = str(image)
+
+        self.album_amount = album_amount
+
+
+def get_all_artists() -> list[Artist]:
+    con = connect(db_path)
+    cur = con.cursor()
+    query = cur.execute("SELECT DISTINCT artist FROM song ORDER BY artist")
+    res = query.fetchall()
+    for i, artist in enumerate(res):
+        query = cur.execute("SELECT DISTINCT image FROM song WHERE artist = (?)", artist)
+        image = query.fetchone()
+        res[i] = Artist(artist[0], image[0])
+    con.close()
+    return res
+
+
+def get_album_tracks(album: str) -> list[Metadata]:
+    con = connect(db_path)
+    cur = con.cursor()
+    query = cur.execute("SELECT *, rowid FROM song WHERE album = (?) ORDER BY album_pos",
+                        [album])
+    res = query.fetchall()
+    for i in range(len(res)):
+        res[i] = Metadata(res[i])
+    con.close()
+    return res
+
+
+def get_artist_albums(artist: str) -> list[Album]:
+    con = connect(db_path)
+    cur = con.cursor()
+    print(artist)
+    query = cur.execute("SELECT DISTINCT album, year, image, artist FROM song WHERE artist = (?) ORDER BY year", (artist,))
+    res = query.fetchall()
+    for i, album in enumerate(res):
+        res[i] = Album(album[0], album[1], album[2], album[3])
     con.close()
     return res
 
@@ -106,7 +173,7 @@ def get_all() -> list[Metadata]:
 # #             (1, "Unknown album1", "Unknown title1", "Unknown artist1", 169, 1969, "/home/black-fox/smpl/resources/images/no_image.jpg", "")
 # # """)
 # # con.commit()
-#
+
 # res = cur.execute("SELECT * FROM song")
 # for i in res:
 #     print(i)

@@ -54,4 +54,3 @@ class Metadata:
         self.image = metadata[6]
         self.file = metadata[7]
         self.id = metadata[8]
-
