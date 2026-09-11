@@ -134,8 +134,100 @@
             valign: "top"
             on_release: Factory.Options().open()
 
+<AlbumView>:
+    on_release: self.open_album()
+    border: (0, 0, 0, 0)
+    background_color: (0, 0, 0, 0)
+    background_normal: ""
+    Image:
+        id: cover
+        size_hint: None, 1
+        fit_mode: "scale-down"
+    BoxLayout:
+        orientation: "vertical"
+        Label:
+            id: title
+            font_size: Size.queue_title_font
+            shorten: True
+            shorten_from: "right"
+            font_name: app.font
+            text_size: self.size
+            size: self.texture_size
+            halign: "left"
+            valign: "bottom"
+        Label:
+            id: artist_year
+            font_size: Size.queue_artist_font
+            shorten: True
+            shorten_from: "right"
+            font_name: app.font
+            text_size: self.size
+            size: self.texture_size
+            halign: "left"
+            valign: "top"
+    AnchorLayout:
+        size_hint: None, 1
+        size: 25, 25
+        Button:
+            id: uv_options
+            # background_down: f'{application_path}/resources/images/more_vert.png'
+            # background_normal: f'{application_path}/resources/images/more_vert.png'
+            on_release: Logger.info("TODO: open queue options")
+            border: (0, 0, 0, 0)
+            background_color: (0, 0, 0, 0)
+            background_normal: ""
+        Image:
+            source: f'{application_path}/resources/images/more_vert.png'
+            fit_mode: "scale-down"
+
+<ArtistView>:
+    on_release: self.open_artist()
+    border: (0, 0, 0, 0)
+    background_color: (0, 0, 0, 0)
+    background_normal: ""
+    Image:
+        id: cover
+        size_hint: None, 1
+        fit_mode: "scale-down"
+    BoxLayout:
+        orientation: "vertical"
+        Label:
+            id: name
+            font_size: Size.queue_title_font
+            shorten: True
+            shorten_from: "right"
+            font_name: app.font
+            text_size: self.size
+            size: self.texture_size
+            halign: "left"
+            valign: "center"
+        # Label:
+        #     id: year
+        #     font_size: Size.queue_artist_font
+        #     shorten: True
+        #     shorten_from: "right"
+        #     font_name: app.font
+        #     text_size: self.size
+        #     size: self.texture_size
+        #     halign: "left"
+        #     valign: "top"
+    AnchorLayout:
+        size_hint: None, 1
+        size: 25, 25
+        Button:
+            id: uv_options
+            # background_down: f'{application_path}/resources/images/more_vert.png'
+            # background_normal: f'{application_path}/resources/images/more_vert.png'
+            on_release: Logger.info("TODO: open queue options")
+            border: (0, 0, 0, 0)
+            background_color: (0, 0, 0, 0)
+            background_normal: ""
+        Image:
+            source: f'{application_path}/resources/images/more_vert.png'
+            fit_mode: "scale-down"
+
 <LibraryView>:
-    viewclass: "TrackView"
+    viewclass: self.view_class
     bar_width: dp(0)
     scroll_wheel_distance: dp(56)
     RecycleBoxLayout:
@@ -226,18 +318,24 @@
         LibraryTopPanel:
 
         LibraryFilter:
+            id: lib_filter
             cols: 3
             height: dp(28)
             size_hint: 1, None
             row_default_height: dp(28)
             row_force_default: True
             FilterButton:
-                chosen_filter: True
+                id: filter_artists
                 text: "Artists"
+                on_release: self.change_view_artists()
             FilterButton:
+                id: filter_albums
                 text: "Albums"
+                on_release: self.change_view_albums()
             FilterButton:
+                id: filter_songs
                 text: "Songs"
+                on_release: self.change_view_songs()
 
         LibraryView:
             id: lv

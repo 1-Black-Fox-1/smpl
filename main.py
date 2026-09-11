@@ -2,6 +2,7 @@ import kivy
 
 kivy.require('2.3.1')
 
+from enum import Enum
 from json import dumps, loads
 from pathlib import Path
 from threading import Thread
@@ -32,7 +33,8 @@ from kivy.uix.recycleview.views import RecycleKVIDsDataViewBehavior
 from kivy.core.audio import SoundLoader
 from kivy.core.window import Window
 
-from db import create_db, db_exists, get_all, remove_db
+from db import (create_db, db_exists, get_album_tracks, get_all_albums,
+                get_all_artists, get_all_tracks, get_artist_albums, remove_db)
 from utils import application_path, get_cache_dir, tracks
 from config import Color as Clr, Font, Size
 from metadata import Metadata
@@ -41,6 +43,7 @@ __version__ = "1.0.0"
 
 Config.set("input", "mouse", "mouse,multitouch_on_demand")
 
+# TODO: update songs after new database is created
 # TODO: better logging
 # TODO: use outer audio engine, not kivy's?
 # TODO: sync json one time at exit with all config data
@@ -133,7 +136,6 @@ class QueueButton(Button):
 
 class IconButton(ButtonBehavior, Image):
     def source_on_play(self, obj):
-        pass
         self.source = f"{application_path}/resources/images/pause_circle.png"
 
     def source_on_pause(self, obj):
@@ -142,6 +144,7 @@ class IconButton(ButtonBehavior, Image):
     def toggle_play(self):
         root = App.get_running_app().root.get_screen("player")
         if root.sound_provider.state == "stop":
+            # FIXME: save pos should be sync with another button
             save_pos = root.sound_provider.get_pos()
             root.sound_provider.play()
             Logger.info("Player: Start playing")
@@ -609,24 +612,37 @@ class SettingsScreen(Screen):
 
 
 class LibraryView(RecycleView):
+    view_class = StringProperty("ArtistView")
     hl_pos = NumericProperty(0)
     row_ids = DictProperty()
 
     def update_lv(self):
         app = App.get_running_app()
-        self.data = [{"index": i,
-                      "cover.source": app.songs[i].image,
-                      "title.text": app.songs[i].title,
-                      "artist.text": app.songs[i].artist,
-                      "duration.text": formated_time(app.songs[i].length),
-                      "now_playing": False}
-                     for i in range(len(app.songs))]
-        self.row_ids = {song.id: i for i, song in enumerate(app.songs)}
-        try:
-            self.update_hl()
-        except Exception:
-            pass
-        Logger.info(f"songs - {app.songs}")
+        if self.view_class == "TrackView":
+            self.data = [{"index": i,
+                          "cover.source": app.songs[i].image,
+                          "title.text": app.songs[i].title,
+                          "artist.text": app.songs[i].artist,
+                          "duration.text": formated_time(app.songs[i].length),
+                          "now_playing": False}
+                         for i in range(len(app.songs))]
+            self.row_ids = {song.id: i for i, song in enumerate(app.songs)}
+            try:
+                self.update_hl()
+            except Exception:
+                pass
+            # Logger.info(f"songs - {app.songs}")
+        elif self.view_class == "AlbumView":
+            self.data = [{"cover.source": app.albums[i].image,
+                          "title.text": app.albums[i].title,
+                          "artist_year.text": f"{app.albums[i].artist} - {app.albums[i].year}"}
+                         for i in range(len(app.albums))]
+        elif self.view_class == "ArtistView":
+        # else:
+            self.data = [{"cover.source": app.artists[i].image,
+                          "name.text": app.artists[i].name}
+                         for i in range(len(app.artists))]
+
 
     def update_hl(self):
         player = App.get_running_app().root.get_screen("player")
@@ -637,13 +653,78 @@ class LibraryView(RecycleView):
         self.refresh_from_data()
 
 
+class AlbumView(RecycleKVIDsDataViewBehavior, BoxLayout, Button):
+    def open_album(self):
+        app = App.get_running_app()
+        library = app.root.get_screen("library")
+        app.update_songs(get_album_tracks(self.ids.title.text))
+        library.ids.lv.view_class = "TrackView"
+        library.ids.lv.update_lv()
+
+
+class ArtistView(RecycleKVIDsDataViewBehavior, BoxLayout, Button):
+    def open_artist(self):
+        app = App.get_running_app()
+        library = app.root.get_screen("library")
+        app.update_albums(get_artist_albums(self.ids.name.text))
+        library.ids.lv.view_class = "AlbumView"
+        library.ids.lv.update_lv()
+
+
 class FilterButton(Button):
-    pass
+    def change_view_artists(self):
+        app = App.get_running_app()
+        app.update_artists(get_all_artists())
+        library = app.root.get_screen("library")
+        library.ids.lv.view_class = "ArtistView"
+        library.ids.lib_filter.set_filter(Filter.artists)
+        library.ids.lv.update_lv()
+
+    def change_view_albums(self):
+        app = App.get_running_app()
+        app.update_albums(get_all_albums())
+        library = app.root.get_screen("library")
+        library.ids.lv.view_class = "AlbumView"
+        library.ids.lib_filter.set_filter(Filter.albums)
+        library.ids.lv.update_lv()
+
+    def change_view_songs(self):
+        app = App.get_running_app()
+        app.update_songs(get_all_tracks())
+        library = app.root.get_screen("library")
+        library.ids.lv.view_class = "TrackView"
+        library.ids.lib_filter.set_filter(Filter.songs)
+        library.ids.lv.update_lv()
+
+
+class Filter(Enum):
+    albums = 0
+    artists = 1
+    songs = 2
 
 
 class LibraryFilter(GridLayout):
-    pass
+    filter_chosen = ObjectProperty(Filter.albums)
+    
+    def reset_hl(self):
+        library = App.get_running_app().root.get_screen("library")
+        if self.filter_chosen == Filter.albums:
+            library.ids.filter_albums.chosen_filter = False
+        elif self.filter_chosen == Filter.artists:
+            library.ids.filter_artists.chosen_filter = False
+        elif self.filter_chosen == Filter.songs:
+            library.ids.filter_songs.chosen_filter = False
 
+    def set_filter(self, filter):
+        self.reset_hl()
+        library = App.get_running_app().root.get_screen("library")
+        self.filter_chosen = filter
+        if self.filter_chosen == Filter.albums:
+            library.ids.filter_albums.chosen_filter = True
+        elif self.filter_chosen == Filter.artists:
+            library.ids.filter_artists.chosen_filter = True
+        elif self.filter_chosen == Filter.songs:
+            library.ids.filter_songs.chosen_filter = True
 
 class LibraryPlayer(GridLayout, Button):
     track_pos = StringProperty("0:00/0:00")
@@ -672,12 +753,11 @@ class SimplePlayer(App):
                        "no_repeat": "No repeat",
                        "repeat_queue": "Repeat queue"}
     songs = ListProperty()
+    albums = ListProperty()
+    artists = ListProperty()
     lib_player = ObjectProperty(None)
     player = ObjectProperty(None)
     queue_screen = ObjectProperty(None)
-
-    def update_songs(self, songs):
-        self.songs = songs
 
     def build(self):
         self.font = Font.main
@@ -691,6 +771,21 @@ class SimplePlayer(App):
         # sm.add_widget(QueueScreen(name="queue"))
         return sm
 
+    # def open_album(self, album):
+    #     library = self.root.get_screen("library")
+    #     self.update_songs(get_album_tracks(album))
+    #     library.ids.lv.view_class = "TrackView"
+        # library.ids.lv.refresh_from_data()
+
+    def update_songs(self, songs):
+        self.songs = songs
+
+    def update_albums(self, albums):
+        self.albums = albums
+
+    def update_artists(self, artists):
+        self.artists = artists
+
     def on_repeat(self, obj, value):
         player = self.get_running_app().root.get_screen("player")
         if self.repeat_variants["repeat"] == self.repeat:
@@ -699,10 +794,14 @@ class SimplePlayer(App):
             player.sound_provider.loop = False
         if self.repeat_variants["repeat_queue"] == self.repeat:
             player.sound_provider.loop = False
-            pass
 
     def update_lv(self):
         self.root.get_screen("library").ids.lv.update_lv()
+
+    def set_default_filter(self):
+        # self.update_artists(get_all_artists())
+        App.get_running_app().root.get_screen("library").ids.lib_filter.set_filter(Filter.artists)
+        self.update_lv()
 
     def on_start(self):
         try:
@@ -713,8 +812,11 @@ class SimplePlayer(App):
         except FileNotFoundError:
             pass
         if db_exists():
-            Clock.schedule_once(lambda dt: self.update_songs(get_all()), -1)
-        Clock.schedule_once(lambda dt: self.update_lv(), -1)
+            Clock.schedule_once(lambda dt: self.update_songs(get_all_tracks()), -1)
+            Clock.schedule_once(lambda dt: self.update_albums(get_all_albums()), -1)
+            Clock.schedule_once(lambda dt: self.update_artists(get_all_artists()), -1)
+            Clock.schedule_once(lambda dt: self.set_default_filter(), -1)
+        # Clock.schedule_once(lambda dt: self.update_lv(), -1)
 
     def on_stop(self):
         with open(self.volume_path, "w") as f:
