@@ -239,9 +239,9 @@ class PlayerScreen(Screen):
     queue = ListProperty(None)
     queue_length = NumericProperty(None)
     now_playing_pos = NumericProperty(None)
-    now_playing = ObjectProperty(None)
+    now_playing = ObjectProperty(None, rebind=True)
     # sound_provider = ObjectProperty(SoundLoader.load(tracks[play_from]), rebind=True)
-    sound_provider = ObjectProperty(rebind=True)
+    sound_provider = ObjectProperty(None, rebind=True)
     # metadt = ObjectProperty(Metadata(tracks[play_from]), rebind=True)
     # metadts = ListProperty([Metadata(track) for track in tracks])
     # metadt = ObjectProperty()
@@ -366,13 +366,18 @@ class PlayerScreen(Screen):
         # if player.sound_provider is not None:
         player.sound_provider.bind(on_play=player.ids.play_button.background_on_play)
         player.sound_provider.bind(on_stop=player.ids.play_button.background_on_pause)
-        # Should be in lib player actually
-        Clock.schedule_once(lambda dt: bind_lib_player(), -1)
 
+        # Should be in lib player actually
         def bind_lib_player():
             app = App.get_running_app()
             player.sound_provider.bind(on_play=app.lib_player.ids.lib_play_button.source_on_play)
             player.sound_provider.bind(on_stop=app.lib_player.ids.lib_play_button.source_on_pause)
+
+        if not self.launched:
+            Clock.schedule_once(lambda dt: bind_lib_player(), -1)
+        else:
+            bind_lib_player()
+
 
     def first_in_queue(self) -> bool:
         if self.now_playing_pos == 0:
