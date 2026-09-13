@@ -460,8 +460,6 @@ class TrackView(RecycleKVIDsDataViewBehavior, BoxLayout, Button):
             # except AttributeError:
             #     pass
             queue = app.songs
-            # We are leaking here or something
-            # Need to create one instance and then update it??
             if app.player is not None:
                 app.player.stop_and_delete()
                 app.player.update_queue_and_now_pos(queue, self.index)
@@ -650,7 +648,8 @@ class LibraryView(RecycleView):
 
     def update_hl(self):
         player = App.get_running_app().root.get_screen("player")
-        self.data[self.hl_pos]["now_playing"] = False
+        if len(self.data) > self.hl_pos:
+            self.data[self.hl_pos]["now_playing"] = False
         track_id = player.now_playing.id
         self.hl_pos = self.row_ids[track_id]
         self.data[self.hl_pos]["now_playing"] = True

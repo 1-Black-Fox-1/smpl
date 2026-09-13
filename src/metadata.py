@@ -14,6 +14,9 @@ cache_dir = get_cache_dir()
 
 # TODO check none for tags before saving image to cache
 # TODO RawMetadata can generate None.jpg
+# TODO Check for multiple artists
+
+
 class RawMetadata:
 
     def __init__(self, path_to_file: Path):
