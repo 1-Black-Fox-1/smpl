@@ -34,6 +34,7 @@ $PyInstallerArgs = @(
     "--hidden-import", "main"
     "--onefile"
     "--icon=$(Join-Path $SrcDir 'resources\images\simple-player.png')"
+    "--noconsole"
 )
 
 & pyinstaller @PyInstallerArgs
