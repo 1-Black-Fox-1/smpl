@@ -3,7 +3,8 @@
 # Rename if you have different venv dir name
 VENV="venv"
 SCRIPT_DIR="`dirname \"$0\"`"
-VENV_DIR="${SCRIPT_DIR}/../${VENV}"
+# Change if your venv in another place
+VENV_DIR="${SCRIPT_DIR}/../src/${VENV}"
 
 VENV_ACTIVATED=false
 if [ "$VIRTUAL_ENV" == "" ]; then
@@ -11,15 +12,14 @@ if [ "$VIRTUAL_ENV" == "" ]; then
     source "${VENV_DIR}/bin/activate"
 fi
 
-pyinstaller "${SCRIPT_DIR}/../main.py"\
+pyinstaller "${SCRIPT_DIR}/../src/main.py"\
     --distpath "${SCRIPT_DIR}/../bin"\
     --workpath "${SCRIPT_DIR}/../build"\
     --specpath "${SCRIPT_DIR}/.."\
     --name "smpl"\
-    --add-data "${SCRIPT_DIR}/../resources/fonts:./resources/fonts"\
-    --add-data "${SCRIPT_DIR}/../resources/images/:./resources/images"\
-    --add-data "${SCRIPT_DIR}/../music:./music"\
-    --add-data "${SCRIPT_DIR}/../simpleplayer.kv:."\
+    --add-data "${SCRIPT_DIR}/../src/resources/fonts:./resources/fonts"\
+    --add-data "${SCRIPT_DIR}/../src/resources/images/:./resources/images"\
+    --add-data "${SCRIPT_DIR}/../src/simpleplayer.kv:."\
     --hidden-import "main"\
     --onefile\
     #only for mac and win
