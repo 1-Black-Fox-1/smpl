@@ -1,3 +1,9 @@
+from os import environ
+
+from utils import get_audio_provider
+
+environ["KIVY_AUDIO"] = get_audio_provider()
+
 import kivy
 
 kivy.require('2.3.1')
@@ -35,7 +41,7 @@ from kivy.core.window import Window
 
 from db import (create_db, db_exists, get_album_tracks, get_all_albums,
                 get_all_artists, get_all_tracks, get_artist_albums, remove_db)
-from utils import application_path, get_cache_dir, tracks
+from utils import application_path, get_cache_dir
 from config import Color as Clr, Font, Size
 from metadata import Metadata
 
@@ -391,7 +397,7 @@ class PlayerScreen(Screen):
             return True
         return False
 
-    # do not know how to name it
+    # sometimes it doesn't work
     def auto_play_next(self, obj):
         app = App.get_running_app()
         root = app.root.get_screen("player")

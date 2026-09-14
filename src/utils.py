@@ -24,6 +24,7 @@ else:
     application_path = Path(__file__).parent.resolve()
     Logger.info(f"Utils: Script {application_path}")
 
+
 def get_tracks() -> list[str]:
     queue_length = len(sys.argv)
     if queue_length > 1:
@@ -61,6 +62,17 @@ def tracks_handler(tracks_path: list[str]) -> list[str]:
     tracks.sort()
     return tracks
 
+
+def get_audio_provider() -> str:
+    if platform == "linux":
+        return "ffpyplayer"
+    if platform == "win32":
+        return "gstplayer"
+    if platform == "darwin":
+        return "ffpyplayer"
+    raise ValueError(f"Utils: Cannot get audio provider for {platform}")
+
+
 def get_cache_dir() -> Path:
     if platform == "linux":
         return Path.home().joinpath(".cache/smpl/")
@@ -70,7 +82,7 @@ def get_cache_dir() -> Path:
         return Path.home().joinpath("Library/Caches/smpl/")
     # if platform == "android":
     #     return Path(Path.home().joinpath(".cache/smpl"))
-    raise ValueError(f"Cannot get cache dir for {platform}")
+    raise ValueError(f"Utils: Cannot get cache dir for {platform}")
 
 def clear_cache():
     cache_dir = get_cache_dir()
