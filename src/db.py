@@ -150,35 +150,9 @@ def get_album_tracks(album: str) -> list[Metadata]:
 def get_artist_albums(artist: str) -> list[Album]:
     con = connect(db_path)
     cur = con.cursor()
-    print(artist)
     query = cur.execute("SELECT DISTINCT album, year, image, artist FROM song WHERE artist = (?) ORDER BY year", (artist,))
     res = query.fetchall()
     for i, album in enumerate(res):
         res[i] = Album(album[0], album[1], album[2], album[3])
     con.close()
     return res
-
-# con = sql.connect("test.db")
-# cur = con.cursor()
-# try:
-#     cur.execute("CREATE TABLE song(album_pos, album, title, artist, length, year, image, file)")
-# except sql.OperationalError:
-#     pass
-# res = cur.execute("SELECT name FROM sqlite_master")
-# print(f"table: {res.fetchone()}")
-#
-# # cur.execute("""
-# #         INSERT INTO song VALUES
-# #             (0, "Unknown album", "Unknown title", "Unknown artist", 69, 2069, "/home/black-fox/smpl/resources/images/no_image.jpg", ""),
-# #             (1, "Unknown album1", "Unknown title1", "Unknown artist1", 169, 1969, "/home/black-fox/smpl/resources/images/no_image.jpg", "")
-# # """)
-# # con.commit()
-
-# res = cur.execute("SELECT * FROM song")
-# for i in res:
-#     print(i)
-# res = cur.execute("SELECT rowid, year FROM song WHERE length > 100")
-# for i in res:
-#     print(f"row id: {i[0]}")
-#     print(f"song year: {i[1]}")
-# con.close()

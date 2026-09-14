@@ -293,21 +293,22 @@ class PlayerScreen(Screen):
             self.on_now_playing_pos(self, pos)
         self.now_playing_pos = pos
 
+    # Doesn't work under Wayland
     def keyboard_listener_setup(self):
         def on_release(key):
             root = App.get_running_app().root.get_screen("player")
             if key == keyboard.Key.media_play_pause:
                 Clock.schedule_once(lambda dt:
                                     root.ids.play_button.toggle_play())
-                Logger.info(key)
+                Logger.info(f"Keyboard: Pressed {key}")
             elif key == keyboard.Key.media_next:
                 Clock.schedule_once(lambda dt:
                                     root.ids.next_button.play_next())
-                Logger.info(key)
+                Logger.info(f"Keyboard: Pressed {key}")
             elif key == keyboard.Key.media_previous:
                 Clock.schedule_once(lambda dt:
                                     root.ids.previous_button.play_previous())
-                Logger.info(key)
+                Logger.info(f"Keyboard: Pressed {key}")
 
         with keyboard.Listener(on_release=on_release) as listener:
             listener.join()
@@ -323,7 +324,7 @@ class PlayerScreen(Screen):
 
     def on_queue(self, obj, value):
         self.queue_length = len(self.queue)
-        Logger.info(f"length: {self.queue_length}")
+        # Logger.info(f"length: {self.queue_length}")
 
     def on_now_playing_pos(self, obj, value):
         self.now_playing = self.queue[self.now_playing_pos]
@@ -336,6 +337,7 @@ class PlayerScreen(Screen):
         else:
             prev_track_state = None
             prev_track_loop = None
+        Logger.info(f"Player: Before loading new song {self.now_playing.file}")
         self.sound_provider = SoundLoader.load(self.now_playing.file)
         Logger.info(f"Player: New song {self.now_playing.title}")
         self.set_length()
@@ -406,24 +408,24 @@ class PlayerScreen(Screen):
         # Logger.info(abs(self.track_pos - self.length))
         # there is math.ceil() to round UP to int
         if abs(self.track_pos - self.length) < 0.5:
-            Logger.info('Auto play next succeded')
+            Logger.info("Player: Auto play next succeded")
             root._set_now_playing_pos(root.now_playing_pos + 1)
             Clock.schedule_once(lambda dt: root.sound_provider.play(), 0)
 
     def bind_update_pos(self):
-        Logger.info('staring binding events')
+        Logger.info("Player: Staring binding events")
         # if self.sound_provider is not None:
         self.sound_provider.bind(on_play=self.start_time_events)
         self.sound_provider.bind(on_stop=self.stop_time_events)
 
     def stop_time_events(self, obj):
-        Logger.info('stop_events')
+        Logger.info("Player: Stop_events")
         self.update_slider_value_event.cancel()
         self.update_pos_event.cancel()
         self.update_lib_pos_event.cancel()
 
     def start_time_events(self, obj):
-        Logger.info('start_events')
+        Logger.info("Player: Start_events")
         self.update_slider_value_event()
         self.update_pos_event()
         self.update_lib_pos_event()
@@ -615,7 +617,7 @@ class SettingsScreen(Screen):
                 json = dumps(self.music_paths)
                 f.write(json)
         else:
-            Logger.error("Path is invalid")
+            Logger.error(f"Settings: Path {path} is invalid")
 
 
 class LibraryView(RecycleView):
