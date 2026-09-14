@@ -779,6 +779,7 @@ class SimplePlayer(App):
         self.font = Font.main
         Window.size = Size.minimal
         self.title = "Simple Player"
+        self.icon = f"{application_path}/resourses/images/simple-player.png"
 
         sm = ScreenManager(transition=CardTransition())
         sm.add_widget(LibraryScreen(name="library"))
