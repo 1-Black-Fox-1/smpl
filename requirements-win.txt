@@ -1,0 +1,26 @@
+altgraph==0.17.5
+buildozer==1.6.0
+certifi==2026.5.20
+charset-normalizer==3.4.7
+Cython==0.29.37
+docutils==0.23
+# evdev==1.9.3
+ffpyplayer==4.5.3
+filetype==1.2.0
+idna==3.18
+Kivy==2.3.1
+Kivy-Garden==0.1.5
+packaging==26.2
+pexpect==4.9.0
+pillow==10.4.0
+ptyprocess==0.7.0
+Pygments==2.20.0
+pyinstaller==6.20.0
+pyinstaller-hooks-contrib==2026.5
+pynput==1.8.2
+python-xlib==0.33
+requests==2.34.2
+setuptools==82.0.1
+six==1.17.0
+tinytag==2.2.1
+urllib3==2.7.0
