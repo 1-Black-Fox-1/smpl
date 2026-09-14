@@ -4,13 +4,17 @@ certifi==2026.5.20
 charset-normalizer==3.4.7
 Cython==0.29.37
 docutils==0.23
-# evdev==1.9.3
 ffpyplayer==4.5.3
 filetype==1.2.0
 idna==3.18
 Kivy==2.3.1
 Kivy-Garden==0.1.5
+kivy_deps.angle==0.4.0
+kivy_deps.glew==0.3.1
+kivy_deps.gstreamer==0.3.4
+kivy_deps.sdl2==0.8.0
 packaging==26.2
+pefile==2024.8.26
 pexpect==4.9.0
 pillow==10.4.0
 ptyprocess==0.7.0
@@ -18,7 +22,10 @@ Pygments==2.20.0
 pyinstaller==6.20.0
 pyinstaller-hooks-contrib==2026.5
 pynput==1.8.2
+pypiwin32==223
 python-xlib==0.33
+pywin32==312
+pywin32-ctypes==0.2.3
 requests==2.34.2
 setuptools==82.0.1
 six==1.17.0
