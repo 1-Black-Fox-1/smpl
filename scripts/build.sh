@@ -22,6 +22,7 @@ pyinstaller "${SCRIPT_DIR}/../src/main.py"\
     --add-data "${SCRIPT_DIR}/../src/simpleplayer.kv:."\
     --hidden-import "main"\
     --onefile\
+    --clean\
 
 if [ $VENV_ACTIVATED ]; then
     deactivate

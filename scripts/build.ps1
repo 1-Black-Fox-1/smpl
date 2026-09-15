@@ -37,8 +37,9 @@ $PyiMakespecArgs = @(
 
 $PyInstallerArgs = @(
     (Join-Path $ScriptDir "smpl.spec")
-   "--distpath", $BinDir
-   "--workpath", $BuildDir
+    "--distpath", $BinDir
+    "--workpath", $BuildDir
+    "--clean"
 )
 
 & pyi-makespec @PyiMakespecArgs
