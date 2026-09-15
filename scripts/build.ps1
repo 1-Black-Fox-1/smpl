@@ -7,7 +7,6 @@ $VenvDir = Join-Path $ScriptDir "..\src\$Venv"
 $SrcDir   = Join-Path $ScriptDir "..\src"
 $BinDir   = Join-Path $ScriptDir "..\bin"
 $BuildDir = Join-Path $ScriptDir "..\build"
-$SpecDir  = Join-Path $ScriptDir ".."
 $SpecFile = Join-Path $ScriptDir "smpl.spec"
 
 $VenvWasActivated = $false
