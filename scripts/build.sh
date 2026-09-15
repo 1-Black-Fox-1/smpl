@@ -2,7 +2,7 @@
 
 # Rename if you have different venv dir name
 VENV="venv"
-SCRIPT_DIR="`dirname \"$0\"`"
+SCRIPT_DIR="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 # Change if your venv in another place
 VENV_DIR="${SCRIPT_DIR}/../src/${VENV}"
 
@@ -15,15 +15,13 @@ fi
 pyinstaller "${SCRIPT_DIR}/../src/main.py"\
     --distpath "${SCRIPT_DIR}/../bin"\
     --workpath "${SCRIPT_DIR}/../build"\
-    --specpath "${SCRIPT_DIR}/.."\
+    --specpath "${SCRIPT_DIR}"\
     --name "smpl"\
     --add-data "${SCRIPT_DIR}/../src/resources/fonts:./resources/fonts"\
     --add-data "${SCRIPT_DIR}/../src/resources/images/:./resources/images"\
     --add-data "${SCRIPT_DIR}/../src/simpleplayer.kv:."\
     --hidden-import "main"\
     --onefile\
-    #only for mac and win
-    # --icon="${SCRIPT_DIR}../resources/images/simple-player.png"
 
 if [ $VENV_ACTIVATED ]; then
     deactivate
