@@ -77,15 +77,16 @@ class PlayButton(Button):
         #                    self.on_press, -1)
 
     def toggle_play(self):
-        root = App.get_running_app().root.get_screen("player")
-        if root.sound_provider.state == "stop":
-            save_pos = root.sound_provider.get_pos()
-            root.sound_provider.play()
+        app = App.get_running_app()
+        player = app.root.get_screen("player")
+        if player.sound_provider.state == "stop":
+            app.pause_pos = player.sound_provider.get_pos()
+            player.sound_provider.play()
             Logger.info("Player: Start playing")
-            Clock.schedule_once(lambda dt: root.sound_provider.seek(save_pos), 0)
-            Logger.info(f"Player: Seek {save_pos}")
+            Clock.schedule_once(lambda dt: player.sound_provider.seek(app.pause_pos), 0)
+            Logger.info(f"Player: Seek {app.pause_pos}")
         else:
-            root.sound_provider.stop()
+            player.sound_provider.stop()
             Logger.info("Player: Stop playing")
 
     def background_on_play(self, obj):
@@ -148,16 +149,16 @@ class IconButton(ButtonBehavior, Image):
         self.source = f"{application_path}/resources/images/play_circle.png"
 
     def toggle_play(self):
-        root = App.get_running_app().root.get_screen("player")
-        if root.sound_provider.state == "stop":
-            # FIXME: save pos should be sync with another button
-            save_pos = root.sound_provider.get_pos()
-            root.sound_provider.play()
+        app = App.get_running_app()
+        player = app.root.get_screen("player")
+        if player.sound_provider.state == "stop":
+            app.pause_pos = player.sound_provider.get_pos()
+            player.sound_provider.play()
             Logger.info("Player: Start playing")
-            Clock.schedule_once(lambda dt: root.sound_provider.seek(save_pos), 0)
-            Logger.info(f"Player: Seek {save_pos}")
+            Clock.schedule_once(lambda dt: player.sound_provider.seek(app.pause_pos), 0)
+            Logger.info(f"Player: Seek {app.pause_pos}")
         else:
-            root.sound_provider.stop()
+            player.sound_provider.stop()
             Logger.info("Player: Stop playing")
 
 
@@ -764,6 +765,7 @@ class SimplePlayer(App):
     volume = BoundedNumericProperty(1, min=0, max=1,
                                     errorhander=lambda x: 1 if x > 1 else 0)
     volume_path = Path(get_cache_dir()).joinpath("volume.json")
+    pause_pos = NumericProperty(0)
     repeat = StringProperty("No repeat")
     repeat_variants = {"repeat": "Repeat",
                        "no_repeat": "No repeat",
