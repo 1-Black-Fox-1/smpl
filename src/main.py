@@ -80,12 +80,12 @@ class PlayButton(Button):
         app = App.get_running_app()
         player = app.root.get_screen("player")
         if player.sound_provider.state == "stop":
-            app.pause_pos = player.sound_provider.get_pos()
             player.sound_provider.play()
             Logger.info("Player: Start playing")
             Clock.schedule_once(lambda dt: player.sound_provider.seek(app.pause_pos), 0)
             Logger.info(f"Player: Seek {app.pause_pos}")
         else:
+            app.pause_pos = player.sound_provider.get_pos()
             player.sound_provider.stop()
             Logger.info("Player: Stop playing")
 
@@ -100,9 +100,11 @@ class PlayButton(Button):
 
 class PreviousButton(Button):
     def play_previous(self):
-        root = App.get_running_app().root.get_screen("player")
+        app = App.get_running_app()
+        root = app.root.get_screen("player")
         if root.track_pos > root.time_move_to_start or root.first_in_queue():
             root.sound_provider.seek(0)
+            app.pause_pos = 0
         else:
             root._set_now_playing_pos(root.now_playing_pos - 1)
 
@@ -115,18 +117,22 @@ class NextButton(Button):
 
 class SeekForwardButton(Button):
     def on_press(self):
-        root = App.get_running_app().root.get_screen("player")
+        app = App.get_running_app()
+        root = app.root.get_screen("player")
         time_to_seek = root.handler_track_pos(root.track_pos + root.seek_time)
         root.sound_provider.seek(time_to_seek)
+        app.pause_pos = time_to_seek
         root.update_slider_value()
         root.update_pos()
 
 
 class SeekBackwardButton(Button):
     def on_press(self):
-        root = App.get_running_app().root.get_screen("player")
+        app = App.get_running_app()
+        root = app.root.get_screen("player")
         time_to_seek = root.handler_track_pos(root.track_pos - root.seek_time)
         root.sound_provider.seek(time_to_seek)
+        app.pause_pos = time_to_seek
         root.update_slider_value()
         root.update_pos()
 
@@ -152,12 +158,12 @@ class IconButton(ButtonBehavior, Image):
         app = App.get_running_app()
         player = app.root.get_screen("player")
         if player.sound_provider.state == "stop":
-            app.pause_pos = player.sound_provider.get_pos()
             player.sound_provider.play()
             Logger.info("Player: Start playing")
             Clock.schedule_once(lambda dt: player.sound_provider.seek(app.pause_pos), 0)
             Logger.info(f"Player: Seek {app.pause_pos}")
         else:
+            app.pause_pos = player.sound_provider.get_pos()
             player.sound_provider.stop()
             Logger.info("Player: Stop playing")
 
@@ -221,16 +227,20 @@ class MusicSlider(Slider):
     def slider_move(self, touch, obj):
         # Logger.info(f'{touch}, {obj}')
         if touch.grab_current == obj:
-            root = App.get_running_app().root.get_screen("player")
+            app = App.get_running_app()
+            root = app.root.get_screen("player")
             root.sound_provider.seek(self.value)
             root.track_pos = self.value
+            app.pause_pos = self.value
 
     def slider_up(self, touch, obj):
         # Logger.info(f'{touch}, {obj}')
         if touch.grab_current == obj:
-            root = App.get_running_app().root.get_screen("player")
+            app = App.get_running_app()
+            root = app.root.get_screen("player")
             root.sound_provider.seek(self.value)
             root.track_pos = self.value
+            app.pause_pos = self.value
 
 
 class PosLabel(Label):
@@ -344,6 +354,7 @@ class PlayerScreen(Screen):
         else:
             prev_track_state = None
             prev_track_loop = None
+        self.pause_pos = 0
         Logger.info(f"Player: Before loading new song {self.now_playing.file}")
         self.sound_provider = SoundLoader.load(self.now_playing.file)
         Logger.info(f"Player: New song {self.now_playing.title}")
