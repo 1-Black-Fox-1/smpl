@@ -781,7 +781,7 @@ class SimplePlayer(App):
         self.font = Font.main
         Window.size = Size.minimal
         self.title = "Simple Player"
-        self.icon = f"{application_path}/resourses/images/simple-player.png"
+        self.icon = f"{application_path}/resources/images/simple-player.png"
 
         sm = ScreenManager(transition=CardTransition())
         sm.add_widget(LibraryScreen(name="library"))
@@ -814,6 +814,7 @@ class SimplePlayer(App):
         if self.repeat_variants["repeat_queue"] == self.repeat:
             player.sound_provider.loop = False
 
+    # FIXME: scroll to the end of library makes song appear at the end of lv
     def update_lv(self):
         self.root.get_screen("library").ids.lv.update_lv()
 
