@@ -150,7 +150,7 @@ def get_album_tracks(album: str) -> list[Metadata]:
 def get_artist_albums(artist: str) -> list[Album]:
     con = connect(db_path)
     cur = con.cursor()
-    query = cur.execute("SELECT DISTINCT album, year, image, artist FROM song WHERE artist = (?) ORDER BY year", (artist,))
+    query = cur.execute("SELECT DISTINCT album, year, image, artist FROM song WHERE artist = (?) ORDER BY year DESC", (artist,))
     res = query.fetchall()
     for i, album in enumerate(res):
         res[i] = Album(album[0], album[1], album[2], album[3])
