@@ -68,7 +68,6 @@ class JumpRecycleView(RecycleView):
             self.scroll_y = 1
         else:
             self.scroll_y = 1 - (index / (len(self.data) - 1))
-        Logger.info(f"scroll - {self.scroll_y}")
 
 
 class Cover(Image):
@@ -612,6 +611,7 @@ class ScanIconButton(ButtonBehavior, Image):
         app.update_songs(get_all_tracks())
         app.update_albums(get_all_albums())
         app.update_artists(get_all_artists())
+        app.set_default_filter()
 
 
 class SettingsScreen(Screen):
@@ -675,10 +675,16 @@ class LibraryView(JumpRecycleView):
                           "artist_year.text": f"{app.albums[i].artist} - {app.albums[i].year}"}
                          for i in range(len(app.albums))]
         elif self.view_class == "ArtistView":
-        # else:
             self.data = [{"cover.source": app.artists[i].image,
                           "name.text": app.artists[i].name}
                          for i in range(len(app.artists))]
+        else:
+            self.view_class = "Label"
+            self.data = [{"text": "Couldn't render library"}]
+
+        if app.songs == [] or app.artists == [] or app.albums == []:
+            self.view_class = "Label"
+            self.data = [{"text": "Set up music path and start scanning in the settings"}]
         self.jump_to_index(0)
 
 
@@ -712,28 +718,31 @@ class ArtistView(RecycleKVIDsDataViewBehavior, BoxLayout, Button):
 
 class FilterButton(Button):
     def change_view_artists(self):
-        app = App.get_running_app()
-        app.update_artists(get_all_artists())
-        library = app.root.get_screen("library")
-        library.ids.lv.view_class = "ArtistView"
-        library.ids.lib_filter.set_filter(Filter.artists)
-        library.ids.lv.update_lv()
+        if db_exists():
+            app = App.get_running_app()
+            app.update_artists(get_all_artists())
+            library = app.root.get_screen("library")
+            library.ids.lv.view_class = "ArtistView"
+            library.ids.lib_filter.set_filter(Filter.artists)
+            library.ids.lv.update_lv()
 
     def change_view_albums(self):
-        app = App.get_running_app()
-        app.update_albums(get_all_albums())
-        library = app.root.get_screen("library")
-        library.ids.lv.view_class = "AlbumView"
-        library.ids.lib_filter.set_filter(Filter.albums)
-        library.ids.lv.update_lv()
+        if db_exists():
+            app = App.get_running_app()
+            app.update_albums(get_all_albums())
+            library = app.root.get_screen("library")
+            library.ids.lv.view_class = "AlbumView"
+            library.ids.lib_filter.set_filter(Filter.albums)
+            library.ids.lv.update_lv()
 
     def change_view_songs(self):
-        app = App.get_running_app()
-        app.update_songs(get_all_tracks())
-        library = app.root.get_screen("library")
-        library.ids.lv.view_class = "TrackView"
-        library.ids.lib_filter.set_filter(Filter.songs)
-        library.ids.lv.update_lv()
+        if db_exists():
+            app = App.get_running_app()
+            app.update_songs(get_all_tracks())
+            library = app.root.get_screen("library")
+            library.ids.lv.view_class = "TrackView"
+            library.ids.lib_filter.set_filter(Filter.songs)
+            library.ids.lv.update_lv()
 
 
 class Filter(Enum):
@@ -841,7 +850,9 @@ class SimplePlayer(App):
 
     def set_default_filter(self):
         # self.update_artists(get_all_artists())
-        App.get_running_app().root.get_screen("library").ids.lib_filter.set_filter(Filter.artists)
+        library = App.get_running_app().root.get_screen("library")
+        library.ids.lib_filter.set_filter(Filter.artists)
+        library.ids.lv.view_class = "ArtistView"
         self.update_lv()
 
     def on_start(self):
