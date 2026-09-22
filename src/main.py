@@ -62,6 +62,15 @@ def formated_time(time: int|float) -> str:
 
 # TODO: if audio device is disconnected stop music!
 
+class JumpRecycleView(RecycleView):
+    def jump_to_index(self, index):
+        if index == 0:
+            self.scroll_y = 1
+        else:
+            self.scroll_y = 1 - (index / (len(self.data) - 1))
+        Logger.info(f"scroll - {self.scroll_y}")
+
+
 class Cover(Image):
     # TODO: tap on image to open it fullscreen
     cover_path = StringProperty()
@@ -527,7 +536,7 @@ class TrackView(RecycleKVIDsDataViewBehavior, BoxLayout, Button):
 
 
 # TODO: move tracks in qv by holding button
-class QueueView(RecycleView):
+class QueueView(JumpRecycleView):
     hl_pos = NumericProperty()
 
     def update_qv(self):
@@ -541,6 +550,7 @@ class QueueView(RecycleView):
                      for i in range(player.queue_length)]
         self.data[player.now_playing_pos]["now_playing"] = True
         self.hl_pos = player.now_playing_pos
+        self.jump_to_index(player.now_playing_pos + 1)
         # Logger.info(self.data)
 
     def update_hl(self):
@@ -638,7 +648,7 @@ class SettingsScreen(Screen):
             Logger.error(f"Settings: Path {path} is invalid")
 
 
-class LibraryView(RecycleView):
+class LibraryView(JumpRecycleView):
     view_class = StringProperty("ArtistView")
     hl_pos = NumericProperty(0)
     row_ids = DictProperty()
@@ -669,6 +679,7 @@ class LibraryView(RecycleView):
             self.data = [{"cover.source": app.artists[i].image,
                           "name.text": app.artists[i].name}
                          for i in range(len(app.artists))]
+        self.jump_to_index(0)
 
 
     def update_hl(self):
@@ -825,7 +836,6 @@ class SimplePlayer(App):
         if self.repeat_variants["repeat_queue"] == self.repeat:
             player.sound_provider.loop = False
 
-    # FIXME: scroll to the end of library makes song appear at the end of lv
     def update_lv(self):
         self.root.get_screen("library").ids.lv.update_lv()
 
