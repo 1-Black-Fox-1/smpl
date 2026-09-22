@@ -752,7 +752,7 @@ class Filter(Enum):
 
 
 class LibraryFilter(GridLayout):
-    filter_chosen = ObjectProperty(Filter.albums)
+    filter_chosen = ObjectProperty(Filter.artists)
     
     def reset_hl(self):
         library = App.get_running_app().root.get_screen("library")
