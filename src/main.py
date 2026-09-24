@@ -206,19 +206,21 @@ class VolumeSlider(Slider):
         # Logger.info(f'{touch}, {obj}')
         if touch.grab_current == obj:
             app = App.get_running_app()
-            player = app.root.get_screen("player")
             app.volume = self.value
-            player.sound_provider.volume = self.value
-            # Logger.info(app.volume)
+            if app.player.exists():
+                player = app.root.get_screen("player")
+                player.sound_provider.volume = self.value
+                # Logger.info(app.volume)
 
     def slider_up(self, touch, obj):
         # Logger.info(f'{touch}, {obj}')
         if touch.grab_current == obj:
             app = App.get_running_app()
-            player = app.root.get_screen("player")
             app.volume = self.value
-            player.sound_provider.volume = self.value
-            # Logger.info(app.volume)
+            if app.player_exists():
+                player = app.root.get_screen("player")
+                player.sound_provider.volume = self.value
+                # Logger.info(app.volume)
 
 
 class TitleLabel(Label):
@@ -827,6 +829,11 @@ class SimplePlayer(App):
     #     library.ids.lv.view_class = "TrackView"
         # library.ids.lv.refresh_from_data()
 
+    def player_exists(self) -> bool:
+        if self.player is not None:
+            return True
+        return False
+
     def update_songs(self, songs):
         self.songs = songs
 
@@ -837,13 +844,14 @@ class SimplePlayer(App):
         self.artists = artists
 
     def on_repeat(self, obj, value):
-        player = self.get_running_app().root.get_screen("player")
-        if self.repeat_variants["repeat"] == self.repeat:
-            player.sound_provider.loop = True
-        if self.repeat_variants["no_repeat"] == self.repeat:
-            player.sound_provider.loop = False
-        if self.repeat_variants["repeat_queue"] == self.repeat:
-            player.sound_provider.loop = False
+        if self.player_exists():
+            player = self.get_running_app().root.get_screen("player")
+            if self.repeat_variants["repeat"] == self.repeat:
+                player.sound_provider.loop = True
+            if self.repeat_variants["no_repeat"] == self.repeat:
+                player.sound_provider.loop = False
+            if self.repeat_variants["repeat_queue"] == self.repeat:
+                player.sound_provider.loop = False
 
     def update_lv(self):
         self.root.get_screen("library").ids.lv.update_lv()
