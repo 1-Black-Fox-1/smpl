@@ -357,8 +357,8 @@
             height: self.minimum_height
             size_hint: 1, None
             rows: 2
-            spacing: 20
-            padding: 0, 0, 0, 20
+            # spacing: 20
+            padding: 0, 0, 0, 40
             Label:
                 size_hint_y: None
                 # height: 10
@@ -371,19 +371,33 @@
                 size: self.texture_size
                 halign: "center"
                 valign: "center"
-            VolumeSlider:
-                size_hint_y: None
-                height: 10
-                orientation: "horizontal"
-                # size_hint: Size.slider
-                range: (0, 1)
-                value: app.volume
-                on_touch_move: self.slider_move(args[1], self)
-                on_touch_up: self.slider_up(args[1], self)
-                value_track: True if app.volume != 0 else False
-                value_track_color: Color.slider_track
-                step: 0.05
-                cursor_size: 0, 0
+            GridLayout:
+                rows: 1
+                cols: 2
+                VolumeSlider:
+                    size_hint_y: None
+                    size_hint_x: .8
+                    height: 10
+                    orientation: "horizontal"
+                    # size_hint: Size.slider
+                    range: (0, 1)
+                    value: app.volume
+                    on_touch_move: self.slider_move(args[1], self)
+                    on_touch_up: self.slider_up(args[1], self)
+                    value_track: True if app.volume != 0 else False
+                    value_track_color: Color.slider_track
+                    step: 0.05
+                    cursor_size: 0, 0
+                Label:
+                    size_hint_y: None
+                    size_hint_x: .2
+                    height: 10
+                    text: str(int(app.volume * 100)) + "%"
+                    font_name: app.font
+                    text_size: self.size
+                    size: self.texture_size
+                    halign: "center"
+                    valign: "center"
         RepeatSpinner:
             text: app.repeat
             values: self.repeat_variants
