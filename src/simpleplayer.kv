@@ -134,6 +134,18 @@
             valign: "top"
             on_release: Factory.Options().open()
 
+<ArtistOptions>:
+    size_hint: None, None
+    size: 300, 150
+    AddToQueueButton:
+        on_release: root.add_to_queue()
+
+<AlbumOptions>:
+    size_hint: None, None
+    size: 300, 150
+    AddToQueueButton:
+        on_release: root.add_to_queue()
+
 <AlbumView>:
     on_release: self.open_album()
     border: (0, 0, 0, 0)
@@ -172,7 +184,7 @@
             id: uv_options
             # background_down: f'{application_path}/resources/images/more_vert.png'
             # background_normal: f'{application_path}/resources/images/more_vert.png'
-            on_release: Logger.info("TODO: open options")
+            on_release: Factory.AlbumOptions(root.ids.title.text).open()
             border: (0, 0, 0, 0)
             background_color: (0, 0, 0, 0)
             background_normal: ""
@@ -218,7 +230,7 @@
             id: uv_options
             # background_down: f'{application_path}/resources/images/more_vert.png'
             # background_normal: f'{application_path}/resources/images/more_vert.png'
-            on_release: Logger.info("TODO: open options")
+            on_release: Factory.ArtistOptions(root.ids.name.text).open()
             border: (0, 0, 0, 0)
             background_color: (0, 0, 0, 0)
             background_normal: ""
@@ -615,13 +627,27 @@
             id: uv_options
             # background_down: f'{application_path}/resources/images/more_vert.png'
             # background_normal: f'{application_path}/resources/images/more_vert.png'
-            on_release: Logger.info("TODO: open options")
+            # on_release: Logger.info("TODO: open options")
+            on_release: Factory.TrackOptions(root.index).open()
             border: (0, 0, 0, 0)
             background_color: (0, 0, 0, 0)
             background_normal: ""
         Image:
             source: f'{application_path}/resources/images/more_vert.png'
             fit_mode: "scale-down"
+
+<AddToQueueButton>:
+    text: "Add to queue"
+    font_name: app.font
+
+<TrackOptions>:
+    size_hint: None, None
+    size: 300, 150
+    GridLayout:
+        rows: 2
+        AddToQueueButton:
+            on_release: root.add_to_queue()
+
 
 <QueueView>:
     viewclass: "TrackView"

@@ -31,6 +31,7 @@ from kivy.uix.widget import Widget
 from kivy.uix.spinner import Spinner
 from kivy.uix.behaviors import ButtonBehavior
 from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.modalview import ModalView
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.recycleview import RecycleView
 from kivy.uix.screenmanager import (CardTransition, NoTransition, Screen,
@@ -188,6 +189,64 @@ class BackButton(Button):
             root.current = "library"
 
 
+class AddToQueueButton(Button):
+    pass
+
+
+class AlbumOptions(ModalView):
+    def __init__(self, title, **kwargs):
+        super().__init__(**kwargs)
+        self.title = title
+
+    def add_to_queue(self):
+        app = App.get_running_app()
+        if app.player_exists():
+            album_songs = get_album_tracks(self.title)
+            for song in album_songs:
+                app.player.add_to_queue(song)
+        self.dismiss()
+
+
+class ArtistOptions(ModalView):
+    def __init__(self, name, **kwargs):
+        super().__init__(**kwargs)
+        self.name = name
+        Logger.info(name)
+
+    def add_to_queue(self):
+        app = App.get_running_app()
+        if app.player_exists():
+            artist_albums = get_artist_albums(self.name)
+            songs = []
+            for album in artist_albums:
+                album_songs = get_album_tracks(album.title)
+                for song in album_songs:
+                    songs.append(song)
+            for song in songs:
+                Logger.info("Boom")
+                app.player.add_to_queue(song)
+            self.dismiss()
+
+
+class TrackOptions(ModalView):
+    def __init__(self, index, **kwargs):
+        super().__init__(**kwargs)
+        app = App.get_running_app()
+        root = app.root
+        if root.current == "library":
+            self.song: Metadata = app.songs[index]
+        elif root.current == "queue" and app.player_exists:
+            self.song: Metadata = app.player.queue[index]
+
+    def add_to_queue(self):
+        app = App.get_running_app()
+        root = app.root
+        if app.player_exists():
+            player = root.get_screen("player")
+            player.add_to_queue(self.song)
+            self.dismiss()
+
+
 class OptionsButton(Button):
     pass
 
@@ -305,6 +364,14 @@ class PlayerScreen(Screen):
         Clock.schedule_once(lambda dt:
                             self.update_lib_pos_event.cancel(),
                             update_slider_frequency)
+
+    def add_to_queue(self, song: Metadata):
+        self.queue.append(song)
+        app = App.get_running_app()
+        queue_screen = app.root.get_screen("queue")
+        if app.root.current == "queue":
+            queue_screen.update_queue_screen()
+        Logger.info(f"Player: {song.title} added to the end of the queue")
 
     def stop_and_delete(self):
         self.sound_provider.stop()
