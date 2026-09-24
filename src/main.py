@@ -64,7 +64,7 @@ def formated_time(time: int|float) -> str:
 
 class JumpRecycleView(RecycleView):
     def jump_to_index(self, index):
-        if index == 0:
+        if index == 0 or len(self.data) == 1:
             self.scroll_y = 1
         else:
             self.scroll_y = 1 - (index / (len(self.data) - 1))
