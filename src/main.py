@@ -182,9 +182,9 @@ class BackButton(Button):
         screen = root.current
         if screen == "settings":
             root.current = "library"
-        elif screen == "player" or "queue":
+        elif screen == "player" or screen == "queue":
             root.transition = SlideTransition()
-            root.transition.direction = "down"
+            root.transition.direction = "right"
             root.current = "library"
 
 
