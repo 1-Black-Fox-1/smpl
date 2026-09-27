@@ -202,8 +202,7 @@ class AlbumOptions(ModalView):
         app = App.get_running_app()
         if app.player_exists():
             album_songs = get_album_tracks(self.title)
-            for song in album_songs:
-                app.player.add_to_queue(song)
+            app.player.add_to_queue(album_songs)
         self.dismiss()
 
 
@@ -214,6 +213,16 @@ class ArtistOptions(ModalView):
         Logger.info(name)
 
     def add_to_queue(self):
+        app = App.get_running_app()
+        if app.player_exists():
+            artist_albums = get_artist_albums(self.name)
+            songs = []
+            for album in artist_albums:
+                album_songs = get_album_tracks(album.title)
+                songs.append(album_songs)
+            app.player.add_to_queue(songs)
+            self.dismiss()
+
         app = App.get_running_app()
         if app.player_exists():
             artist_albums = get_artist_albums(self.name)
@@ -243,7 +252,9 @@ class TrackOptions(ModalView):
         root = app.root
         if app.player_exists():
             player = root.get_screen("player")
-            player.add_to_queue(self.song)
+            player.add_to_queue([self.song])
+            self.dismiss()
+
             self.dismiss()
 
 
@@ -365,13 +376,15 @@ class PlayerScreen(Screen):
                             self.update_lib_pos_event.cancel(),
                             update_slider_frequency)
 
-    def add_to_queue(self, song: Metadata):
-        self.queue.append(song)
+
+    def add_to_queue(self, songs: list[Metadata]):
+        for song in songs:
+            self.queue.append(song)
+            Logger.info(f"Player: {song.title} added to the end of the queue")
         app = App.get_running_app()
         queue_screen = app.root.get_screen("queue")
         if app.root.current == "queue":
             queue_screen.update_queue_screen()
-        Logger.info(f"Player: {song.title} added to the end of the queue")
 
     def stop_and_delete(self):
         self.sound_provider.stop()
@@ -474,7 +487,6 @@ class PlayerScreen(Screen):
             Clock.schedule_once(lambda dt: bind_lib_player(), -1)
         else:
             bind_lib_player()
-
 
     def first_in_queue(self) -> bool:
         if self.now_playing_pos == 0:
