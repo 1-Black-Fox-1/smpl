@@ -486,11 +486,10 @@ class PlayerScreen(Screen):
             return True
         return False
 
-    # sometimes it doesn't work
     def auto_play_next(self, obj):
         app = App.get_running_app()
         root = app.root.get_screen("player")
-        if abs(self.track_pos - self.length) < 0.5:
+        if abs(self.track_pos - self.length) < 1:
             if (self.last_in_queue() and app.repeat == app.repeat_variants["repeat_queue"]):
                 root._set_now_playing_pos(0)
                 Clock.schedule_once(lambda dt: root.sound_provider.play(), 0)
