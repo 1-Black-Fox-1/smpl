@@ -193,6 +193,10 @@ class AddToQueueButton(Button):
     pass
 
 
+class InsertNextButton(Button):
+    pass
+
+
 class AlbumOptions(ModalView):
     def __init__(self, title, **kwargs):
         super().__init__(**kwargs)
@@ -205,6 +209,12 @@ class AlbumOptions(ModalView):
             app.player.add_to_queue(album_songs)
         self.dismiss()
 
+    def insert_next(self):
+        app = App.get_running_app()
+        if app.player_exists():
+            album_songs = get_album_tracks(self.title)
+            app.player.insert_next(album_songs)
+        self.dismiss()
 
 class ArtistOptions(ModalView):
     def __init__(self, name, **kwargs):
@@ -223,6 +233,7 @@ class ArtistOptions(ModalView):
             app.player.add_to_queue(songs)
             self.dismiss()
 
+    def insert_next(self):
         app = App.get_running_app()
         if app.player_exists():
             artist_albums = get_artist_albums(self.name)
@@ -231,9 +242,7 @@ class ArtistOptions(ModalView):
                 album_songs = get_album_tracks(album.title)
                 for song in album_songs:
                     songs.append(song)
-            for song in songs:
-                Logger.info("Boom")
-                app.player.add_to_queue(song)
+            app.player.insert_next(songs)
             self.dismiss()
 
 
@@ -255,6 +264,12 @@ class TrackOptions(ModalView):
             player.add_to_queue([self.song])
             self.dismiss()
 
+    def insert_next(self):
+        app = App.get_running_app()
+        root = app.root
+        if app.player_exists():
+            player = root.get_screen("player")
+            player.insert_next([self.song])
             self.dismiss()
 
 
@@ -376,6 +391,20 @@ class PlayerScreen(Screen):
                             self.update_lib_pos_event.cancel(),
                             update_slider_frequency)
 
+    def insert_next(self, songs: list[Metadata]):
+        new_queue = []
+        for i in range(self.now_playing_pos + 1):
+            new_queue.append(self.queue[i])
+        for song in songs:
+            new_queue.append(song)
+            Logger.info(f"Player: {song.title} inserted next")
+        for i in range(self.now_playing_pos + 1, self.queue_length):
+            new_queue.append(self.queue[i])
+        self.queue = new_queue
+        app = App.get_running_app()
+        queue_screen = app.root.get_screen("queue")
+        if app.root.current == "queue":
+            queue_screen.update_queue_screen()
 
     def add_to_queue(self, songs: list[Metadata]):
         for song in songs:

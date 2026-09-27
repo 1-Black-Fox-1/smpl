@@ -137,14 +137,22 @@
 <ArtistOptions>:
     size_hint: None, None
     size: 300, 150
-    AddToQueueButton:
-        on_release: root.add_to_queue()
+    GridLayout:
+        rows: 2
+        AddToQueueButton:
+            on_release: root.add_to_queue()
+        InsertNextButton:
+            on_release: root.insert_next()
 
 <AlbumOptions>:
     size_hint: None, None
     size: 300, 150
-    AddToQueueButton:
-        on_release: root.add_to_queue()
+    GridLayout:
+        rows: 2
+        AddToQueueButton:
+            on_release: root.add_to_queue()
+        InsertNextButton:
+            on_release: root.insert_next()
 
 <AlbumView>:
     on_release: self.open_album()
@@ -640,6 +648,10 @@
     text: "Add to queue"
     font_name: app.font
 
+<InsertNextButton>:
+    text: "Insert next"
+    font_name: app.font
+
 <TrackOptions>:
     size_hint: None, None
     size: 300, 150
@@ -647,6 +659,8 @@
         rows: 2
         AddToQueueButton:
             on_release: root.add_to_queue()
+        InsertNextButton:
+            on_release: root.insert_next()
 
 
 <QueueView>:
