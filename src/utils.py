@@ -10,7 +10,7 @@ from kivy.logger import Logger
 
 if getattr(sys, "frozen", False):
     # If the application is run as a bundle, the PyInstaller bootloader
-    # extends the sys module by a flag frozen=True and sets the app 
+    # extends the sys module by a flag frozen=True and sets the app
     # path into variable _MEIPASS'.
 
     # This is path to files of exe at runtime
@@ -33,9 +33,10 @@ def get_tracks() -> list[str]:
         return tracks
     return None
 
+
 def is_audio(path: Path) -> bool:
     type = guess_type(path)[0]
-    if type == None:
+    if type is None:
         # Logger.info(f"{path, type} is not known by mimetypes")
         return False
     if type.split(sep='/')[0] == 'audio':
@@ -43,11 +44,12 @@ def is_audio(path: Path) -> bool:
         return True
     return False
 
+
 def tracks_handler(tracks_path: list[str]) -> list[str]:
     tracks: list[str] = []
     for path in tracks_path:
         path = Path(path)
-        if not(path.exists()):
+        if not (path.exists()):
             # Logger.info(f"{path} doesn't exist")
             continue
         if path.is_file():
@@ -84,6 +86,7 @@ def get_cache_dir() -> Path:
     #     return Path(Path.home().joinpath(".cache/smpl"))
     raise ValueError(f"Utils: Cannot get cache dir for {platform}")
 
+
 def clear_cache():
     cache_dir = get_cache_dir()
     try:
@@ -91,5 +94,6 @@ def clear_cache():
     except FileNotFoundError:
         Logger.info(f"{cache_dir} doens't exist")
     mkdir(cache_dir)
+
 
 tracks = get_tracks()

@@ -18,7 +18,6 @@ from kivy.app import App
 from kivy.clock import Clock
 from kivy.config import Config
 from kivy.logger import Logger
-from kivy.graphics import Color, Rectangle
 from kivy.properties import (BooleanProperty, BoundedNumericProperty,
                              DictProperty, ListProperty, NumericProperty,
                              ObjectProperty, StringProperty)
@@ -27,7 +26,6 @@ from kivy.uix.label import Label
 from kivy.uix.popup import Popup
 from kivy.uix.button import Button
 from kivy.uix.slider import Slider
-from kivy.uix.widget import Widget
 from kivy.uix.spinner import Spinner
 from kivy.uix.behaviors import ButtonBehavior
 from kivy.uix.boxlayout import BoxLayout
@@ -43,7 +41,7 @@ from kivy.core.window import Window
 from db import (create_db, db_exists, get_album_tracks, get_all_albums,
                 get_all_artists, get_all_tracks, get_artist_albums, remove_db)
 from utils import application_path, get_cache_dir
-from config import Color as Clr, Font, Size
+from config import Font, Size
 from metadata import Metadata
 
 __version__ = "1.0.0"
@@ -796,7 +794,6 @@ class LibraryView(JumpRecycleView):
             self.data = [{"text": "Set up music path and start scanning in the settings"}]
         self.jump_to_index(0)
 
-
     def update_hl(self):
         player = App.get_running_app().root.get_screen("player")
         if len(self.data) > self.hl_pos:
@@ -862,7 +859,7 @@ class Filter(Enum):
 
 class LibraryFilter(GridLayout):
     filter_chosen = ObjectProperty(Filter.artists)
-    
+
     def reset_hl(self):
         library = App.get_running_app().root.get_screen("library")
         if self.filter_chosen == Filter.albums:
@@ -882,6 +879,7 @@ class LibraryFilter(GridLayout):
             library.ids.filter_artists.chosen_filter = True
         elif self.filter_chosen == Filter.songs:
             library.ids.filter_songs.chosen_filter = True
+
 
 class LibraryPlayer(GridLayout, Button):
     track_pos = StringProperty("0:00/0:00")
