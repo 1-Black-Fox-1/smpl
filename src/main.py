@@ -195,6 +195,10 @@ class InsertNextButton(Button):
     pass
 
 
+class OptionsPlayButton(Button):
+    pass
+
+
 class AlbumOptions(ModalView):
     def __init__(self, title, **kwargs):
         super().__init__(**kwargs)
@@ -214,11 +218,47 @@ class AlbumOptions(ModalView):
             app.player.insert_next(album_songs)
         self.dismiss()
 
+    def play(self):
+        app = App.get_running_app()
+        screen = app.root.current
+        album_songs = get_album_tracks(self.title)
+        if screen == "queue":
+            if not self.now_playing:
+                # player._set_now_playing_pos(self.song)
+                app.player.stop_and_delete()
+                app.player.update_queue_and_now_pos(album_songs, 0)
+        elif screen == "library":
+            if app.player is not None:
+                app.player.stop_and_delete()
+                app.player.update_queue_and_now_pos(album_songs, 0)
+            else:
+                app.player = PlayerScreen(name="player", queue=album_songs, pos=0)
+                app.root.add_widget(app.player)
+
+            def create_lib_player():
+                app = App.get_running_app()
+                library = app.root.get_screen("library")
+                lib_player = LibraryPlayer()
+                app.lib_player = lib_player
+                library.ids.lib_box.add_widget(lib_player)
+
+            def create_queue_screen():
+                app = App.get_running_app()
+                app.queue_screen = QueueScreen(name="queue")
+                app.root.add_widget(app.queue_screen)
+
+            if app.lib_player is None:
+                Clock.schedule_once(lambda dt: create_lib_player(), -1)
+            if app.queue_screen is None:
+                Clock.schedule_once(lambda dt: create_queue_screen(), -1)
+            Clock.schedule_once(lambda dt: app.player.sound_provider.play(), 1)
+        self.dismiss()
+
+
 class ArtistOptions(ModalView):
     def __init__(self, name, **kwargs):
         super().__init__(**kwargs)
         self.name = name
-        Logger.info(name)
 
     def add_to_queue(self):
         app = App.get_running_app()
@@ -244,12 +284,54 @@ class ArtistOptions(ModalView):
             app.player.insert_next(songs)
             self.dismiss()
 
+    def play(self):
+        app = App.get_running_app()
+        screen = app.root.current
+        songs = []
+        artist_albums = get_artist_albums(self.name)
+        for album in artist_albums:
+            album_songs = get_album_tracks(album.title)
+            for song in album_songs:
+                songs.append(song)
+        if screen == "queue":
+            if not self.now_playing:
+                # player._set_now_playing_pos(self.song)
+                app.player.stop_and_delete()
+                app.player.update_queue_and_now_pos(songs, 0)
+        elif screen == "library":
+            if app.player is not None:
+                app.player.stop_and_delete()
+                app.player.update_queue_and_now_pos(songs, 0)
+            else:
+                app.player = PlayerScreen(name="player", queue=songs, pos=0)
+                app.root.add_widget(app.player)
+
+            def create_lib_player():
+                app = App.get_running_app()
+                library = app.root.get_screen("library")
+                lib_player = LibraryPlayer()
+                app.lib_player = lib_player
+                library.ids.lib_box.add_widget(lib_player)
+
+            def create_queue_screen():
+                app = App.get_running_app()
+                app.queue_screen = QueueScreen(name="queue")
+                app.root.add_widget(app.queue_screen)
+
+            if app.lib_player is None:
+                Clock.schedule_once(lambda dt: create_lib_player(), -1)
+            if app.queue_screen is None:
+                Clock.schedule_once(lambda dt: create_queue_screen(), -1)
+            Clock.schedule_once(lambda dt: app.player.sound_provider.play(), 1)
+        self.dismiss()
+
 
 class TrackOptions(ModalView):
     def __init__(self, index, **kwargs):
         super().__init__(**kwargs)
         app = App.get_running_app()
         root = app.root
+        self.index = index
         if root.current == "library":
             self.song: Metadata = app.songs[index]
         elif root.current == "queue" and app.player_exists:
@@ -270,6 +352,39 @@ class TrackOptions(ModalView):
             player = root.get_screen("player")
             player.insert_next([self.song])
             self.dismiss()
+
+    def play(self):
+        app = App.get_running_app()
+        screen = app.root.current
+        if screen == "queue":
+            # if not self.now_playing:
+            app.player._set_now_playing_pos(self.index)
+        elif screen == "library":
+            if app.player is not None:
+                app.player.stop_and_delete()
+                app.player.update_queue_and_now_pos([self.song], 0)
+            else:
+                app.player = PlayerScreen(name="player", queue=[self.song], pos=0)
+                app.root.add_widget(app.player)
+
+            def create_lib_player():
+                app = App.get_running_app()
+                library = app.root.get_screen("library")
+                lib_player = LibraryPlayer()
+                app.lib_player = lib_player
+                library.ids.lib_box.add_widget(lib_player)
+
+            def create_queue_screen():
+                app = App.get_running_app()
+                app.queue_screen = QueueScreen(name="queue")
+                app.root.add_widget(app.queue_screen)
+
+            if app.lib_player is None:
+                Clock.schedule_once(lambda dt: create_lib_player(), -1)
+            if app.queue_screen is None:
+                Clock.schedule_once(lambda dt: create_queue_screen(), -1)
+            Clock.schedule_once(lambda dt: app.player.sound_provider.play(), 1)
+        self.dismiss()
 
 
 class OptionsButton(Button):
@@ -595,21 +710,13 @@ class TrackView(RecycleKVIDsDataViewBehavior, BoxLayout, Button):
             if not self.now_playing:
                 player._set_now_playing_pos(self.index)
         elif screen == "library":
-            # library = app.root.get_screen("library")
-            # try:
-            #     library.ids.lib_box.remove_widget(app.lib_player)
-            # except AttributeError:
-            #     pass
             queue = app.songs
             if app.player is not None:
                 app.player.stop_and_delete()
                 app.player.update_queue_and_now_pos(queue, self.index)
             else:
-                # print(self.index)
-                # exit()
                 app.player = PlayerScreen(name="player", queue=queue, pos=self.index)
                 app.root.add_widget(app.player)
-                # app.root.remove_widget(app.player)
 
             def create_lib_player():
                 app = App.get_running_app()
@@ -800,8 +907,11 @@ class LibraryView(JumpRecycleView):
         if len(self.data) > self.hl_pos:
             self.data[self.hl_pos]["now_playing"] = False
         track_id = player.now_playing.id
-        self.hl_pos = self.row_ids[track_id]
-        self.data[self.hl_pos]["now_playing"] = True
+        try:
+            self.hl_pos = self.row_ids[track_id]
+            self.data[self.hl_pos]["now_playing"] = True
+        except KeyError:
+            pass
         self.refresh_from_data()
 
 

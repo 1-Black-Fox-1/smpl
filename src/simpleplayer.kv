@@ -134,11 +134,17 @@
             valign: "top"
             on_release: Factory.Options().open()
 
+<OptionsPlayButton>:
+    text: "Play"
+    font_name: app.font
+
 <ArtistOptions>:
     size_hint: None, None
     size: 300, 150
     GridLayout:
-        rows: 2
+        rows: 3
+        OptionsPlayButton:
+            on_release: root.play()
         AddToQueueButton:
             on_release: root.add_to_queue()
         InsertNextButton:
@@ -148,7 +154,9 @@
     size_hint: None, None
     size: 300, 150
     GridLayout:
-        rows: 2
+        rows: 3
+        OptionsPlayButton:
+            on_release: root.play()
         AddToQueueButton:
             on_release: root.add_to_queue()
         InsertNextButton:
@@ -656,7 +664,9 @@
     size_hint: None, None
     size: 300, 150
     GridLayout:
-        rows: 2
+        rows: 3
+        OptionsPlayButton:
+            on_release: root.play()
         AddToQueueButton:
             on_release: root.add_to_queue()
         InsertNextButton:
