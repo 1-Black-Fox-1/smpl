@@ -227,7 +227,8 @@ class ArtistOptions(ModalView):
             songs = []
             for album in artist_albums:
                 album_songs = get_album_tracks(album.title)
-                songs.append(album_songs)
+                for song in album_songs:
+                    songs.append(song)
             app.player.add_to_queue(songs)
             self.dismiss()
 
