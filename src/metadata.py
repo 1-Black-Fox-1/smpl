@@ -22,10 +22,10 @@ class RawMetadata:
     def __init__(self, path_to_file: Path):
         self.tag: TinyTag = TinyTag.get(path_to_file)
         self.image_path = str(cache_dir.joinpath(f"album-cover/{self.tag.artist}/{self.tag.album}.jpg"))
-        if not(exists(self.image_path)):
+        if not (exists(self.image_path)):
             self.tag: TinyTag = TinyTag.get(path_to_file, image=True)
             self._image: Image | None = self.tag.images.any
-            if self._image == None:
+            if self._image is None:
                 self.image_path = f"{application_path}/resources/images/no_image.jpg"
                 Logger.info(f"Metadata: Image didn't found for {self.image_path}")
             else:

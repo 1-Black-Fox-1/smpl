@@ -9,6 +9,8 @@ from metadata import Metadata, RawMetadata
 
 db_path = Path(get_cache_dir()).joinpath("songs.db")
 
+# TODO: Add album artist for album artist and artist for song artist
+
 def create_db(audio_paths: list[Path|str]):
     con = connect(db_path)
     cur = con.cursor()
@@ -36,7 +38,7 @@ def create_db(audio_paths: list[Path|str]):
                     else:
                         artist = mt.tag.artist
                 else:
-                    artist = mt.tag.artist
+                    artist = mt.tag.albumartist
                 if mt.tag.duration is None:
                     # TODO: probably player will fail
                     length = 0

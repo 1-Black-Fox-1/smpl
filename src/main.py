@@ -406,7 +406,7 @@ class VolumeSlider(Slider):
         if touch.grab_current == obj:
             app = App.get_running_app()
             app.volume = self.value
-            if app.player.exists():
+            if app.player_exists():
                 player = app.root.get_screen("player")
                 player.sound_provider.volume = self.value
                 # Logger.info(app.volume)
@@ -587,7 +587,8 @@ class PlayerScreen(Screen):
         else:
             prev_track_state = None
             prev_track_loop = None
-        self.pause_pos = 0
+        app = App.get_running_app()
+        app.pause_pos = 0
         Logger.info(f"Player: Before loading new song {self.now_playing.file}")
         self.sound_provider = SoundLoader.load(self.now_playing.file)
         Logger.info(f"Player: New song {self.now_playing.title}")
@@ -595,7 +596,6 @@ class PlayerScreen(Screen):
         self.bind_play_button()
         self.bind_update_pos()
         self.sound_provider.bind(on_stop=self.auto_play_next)
-        app = App.get_running_app()
         self.sound_provider.volume = app.volume
         if prev_track_loop is not None:
             self.sound_provider.loop = prev_track_loop
@@ -909,7 +909,8 @@ class LibraryView(JumpRecycleView):
         track_id = player.now_playing.id
         try:
             self.hl_pos = self.row_ids[track_id]
-            self.data[self.hl_pos]["now_playing"] = True
+            if len(self.data) > self.hl_pos:
+                self.data[self.hl_pos]["now_playing"] = True
         except KeyError:
             pass
         self.refresh_from_data()
