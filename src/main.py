@@ -66,6 +66,7 @@ class ImageButton(ButtonBehavior, Image):
 
 
 class JumpRecycleView(RecycleView):
+    # FIXME: now jump breaks recycle view
     def jump_to_index(self, index):
         if index == 0 or len(self.data) == 1:
             self.scroll_y = 1
@@ -210,6 +211,10 @@ class BackButton(ImageButton):
                 library_filter = library.ids.lib_filter
                 library_filter.set_filter(library_filter.filter_chosen)
                 library.last_open_artist = None
+            elif library.last_opened_album is not None:
+                library_filter = library.ids.lib_filter
+                library_filter.set_filter(library_filter.filter_chosen)
+                library.last_opened_album = None
 
 
 class AddToQueueButton(Button):
