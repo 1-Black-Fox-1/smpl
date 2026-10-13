@@ -2,6 +2,7 @@
 
 #:import Logger kivy.logger.Logger
 #:import Factory kivy.factory.Factory
+#:import ScrollEffect kivy.effects.scroll.ScrollEffect
 
 #:import Color config.Color
 #:import Padding config.Padding
@@ -53,6 +54,7 @@
     viewclass: "PathView"
     bar_width: dp(0)
     scroll_wheel_distance: dp(30)
+    effect_cls: ScrollEffect
     RecycleBoxLayout:
         default_size: None, dp(30)
         default_size_hint: 1, None
@@ -256,6 +258,7 @@
     viewclass: self.view_class
     bar_width: dp(0)
     scroll_wheel_distance: dp(56)
+    effect_cls: ScrollEffect
     RecycleBoxLayout:
         default_size: None, dp(56)
         default_size_hint: 1, None
@@ -671,6 +674,7 @@
     viewclass: "TrackView"
     bar_width: dp(0)
     scroll_wheel_distance: dp(56)
+    effect_cls: ScrollEffect
     RecycleBoxLayout:
         default_size: None, dp(56)
         default_size_hint: 1, None
