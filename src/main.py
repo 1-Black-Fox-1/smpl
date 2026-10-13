@@ -185,10 +185,31 @@ class BackButton(ImageButton):
         screen = root.current
         if screen == "settings":
             root.current = "library"
+            screen = root.current
+            library = root.get_screen(screen)
+            if library.last_opened_album is not None:
+                library.open_album(library.last_opened_album)
+            elif library.last_opened_artist is not None:
+                library.open_artist(library.last_opened_artist)
         elif screen == "player" or screen == "queue":
             root.transition = SlideTransition()
             root.transition.direction = "right"
             root.current = "library"
+            screen = root.current
+            library = root.get_screen(screen)
+            if library.last_opened_album is not None:
+                library.open_album(library.last_opened_album)
+            elif library.last_opened_artist is not None:
+                library.open_artist(library.last_opened_artist)
+        elif screen == "library":
+            library = root.get_screen(screen)
+            if library.last_opened_artist is not None and library.last_opened_album is not None:
+                library.open_artist(library.last_opened_artist)
+                library.last_opened_album = None
+            elif library.last_opened_artist is not None and library.last_opened_album is None:
+                library_filter = library.ids.lib_filter
+                library_filter.set_filter(library_filter.filter_chosen)
+                library.last_open_artist = None
 
 
 class AddToQueueButton(Button):
@@ -924,21 +945,24 @@ class AlbumView(RecycleKVIDsDataViewBehavior, BoxLayout, Button):
     def open_album(self):
         app = App.get_running_app()
         library = app.root.get_screen("library")
-        app.update_songs(get_album_tracks(self.ids.title.text))
-        library.ids.lv.view_class = "TrackView"
-        library.ids.lv.update_lv()
+        library.open_album(self.ids.title.text)
 
 
 class ArtistView(RecycleKVIDsDataViewBehavior, BoxLayout, Button):
     def open_artist(self):
         app = App.get_running_app()
         library = app.root.get_screen("library")
-        app.update_albums(get_artist_albums(self.ids.name.text))
-        library.ids.lv.view_class = "AlbumView"
-        library.ids.lv.update_lv()
+        library.open_artist(self.ids.name.text)
+
+
+class Filter(Enum):
+    albums = 0
+    artists = 1
+    songs = 2
 
 
 class FilterButton(Button):
+    # 3 fuction after should be deprecated
     def change_view_artists(self):
         if db_exists():
             app = App.get_running_app()
@@ -946,7 +970,6 @@ class FilterButton(Button):
             library = app.root.get_screen("library")
             library.ids.lv.view_class = "ArtistView"
             library.ids.lib_filter.set_filter(Filter.artists)
-            library.ids.lv.update_lv()
 
     def change_view_albums(self):
         if db_exists():
@@ -955,7 +978,6 @@ class FilterButton(Button):
             library = app.root.get_screen("library")
             library.ids.lv.view_class = "AlbumView"
             library.ids.lib_filter.set_filter(Filter.albums)
-            library.ids.lv.update_lv()
 
     def change_view_songs(self):
         if db_exists():
@@ -964,13 +986,13 @@ class FilterButton(Button):
             library = app.root.get_screen("library")
             library.ids.lv.view_class = "TrackView"
             library.ids.lib_filter.set_filter(Filter.songs)
-            library.ids.lv.update_lv()
 
-
-class Filter(Enum):
-    albums = 0
-    artists = 1
-    songs = 2
+    def change_view(self, filter: Filter):
+        if db_exists():
+            app = App.get_running_app()
+            app.update_songs(get_all_tracks())
+            library = app.root.get_screen("library")
+            library.ids.lib_filter.set_filter(Filter.songs)
 
 
 class LibraryFilter(GridLayout):
@@ -985,9 +1007,11 @@ class LibraryFilter(GridLayout):
         elif self.filter_chosen == Filter.songs:
             library.ids.filter_songs.chosen_filter = False
 
-    def set_filter(self, filter):
+    def set_filter(self, filter: Filter):
         self.reset_hl()
         library = App.get_running_app().root.get_screen("library")
+        if self.filter_chosen == filter:
+            self.on_filter_chosen(self, filter)
         self.filter_chosen = filter
         if self.filter_chosen == Filter.albums:
             library.ids.filter_albums.chosen_filter = True
@@ -995,6 +1019,18 @@ class LibraryFilter(GridLayout):
             library.ids.filter_artists.chosen_filter = True
         elif self.filter_chosen == Filter.songs:
             library.ids.filter_songs.chosen_filter = True
+        library.ids.lv.update_lv()
+
+    def on_filter_chosen(self, obj, value):
+        library = App.get_running_app().root.get_screen("library")
+        if value == Filter.artists:
+            library.ids.lv.view_class = "ArtistView"
+        elif value == Filter.albums:
+            library.ids.lv.view_class = "AlbumView"
+        elif Filter.artists:
+            library.ids.lv.view_class = "TrackView"
+        library.last_opened_album = None
+        library.last_opened_artist = None
 
 
 class LibraryPlayer(GridLayout, Button):
@@ -1008,6 +1044,23 @@ class LibraryPlayer(GridLayout, Button):
 
 
 class LibraryScreen(Screen):
+    last_opened_album = StringProperty(None, allownone=True)
+    last_opened_artist = StringProperty(None, allownone=True)
+
+    def open_album(self, name: str):
+        app = App.get_running_app()
+        app.update_songs(get_album_tracks(name))
+        self.ids.lv.view_class = "TrackView"
+        self.ids.lv.update_lv()
+        self.last_opened_album = name
+
+    def open_artist(self, name: str):
+        app = App.get_running_app()
+        app.update_albums(get_artist_albums(name))
+        self.ids.lv.view_class = "AlbumView"
+        self.ids.lv.update_lv()
+        self.last_opened_artist = name
+
     def update_lv(self):
         Clock.schedule_once(lambda dt: self.ids.lv.update_lv(), -1)
 
