@@ -61,6 +61,10 @@ def formated_time(time: int|float) -> str:
 
 # TODO: if audio device is disconnected stop music!
 
+class ImageButton(ButtonBehavior, Image):
+    pass
+
+
 class JumpRecycleView(RecycleView):
     def jump_to_index(self, index):
         if index == 0 or len(self.data) == 1:
@@ -154,7 +158,7 @@ class QueueButton(Button):
         sm.current = "queue"
 
 
-class IconButton(ButtonBehavior, Image):
+class LibraryPlayButton(ImageButton):
     def source_on_play(self, obj):
         self.source = f"{application_path}/resources/images/pause_circle.png"
 
@@ -175,7 +179,7 @@ class IconButton(ButtonBehavior, Image):
             Logger.info("Player: Stop playing")
 
 
-class BackButton(Button):
+class BackButton(ImageButton):
     def go_back(self):
         root = App.get_running_app().root
         screen = root.current
@@ -809,7 +813,7 @@ class PathsView(RecycleView):
     paths_amount = NumericProperty(0)
 
 
-class SettingsButton(Button):
+class SettingsButton(ImageButton):
     def open_settings(self):
         sm = App.get_running_app().root
         sm.transition = NoTransition()

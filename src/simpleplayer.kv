@@ -20,8 +20,7 @@
             size_hint: None, None
             size: 25, 25
             border: (0, 0, 0, 0)
-            background_down: f'{application_path}/resources/images/arrow_back.png'
-            background_normal: f'{application_path}/resources/images/arrow_back.png'
+            source: f'{application_path}/resources/images/arrow_back.png'
             halign: "left"
             valign: "top"
             on_release: self.go_back()
@@ -108,31 +107,30 @@
 
 <LibraryTopPanel@BoxLayout>:
     size_hint: Size.top_buttons
-    orientation: "horizontal"
-    AnchorLayout:
-        anchor_x: "left"
-        anchor_y: "top"
-        SettingsButton:
-            size_hint: None, None
-            size: 25, 25
-            border: (0, 0, 0, 0)
-            background_down: f"{application_path}/resources/images/settings.png"
-            background_normal: f"{application_path}/resources/images/settings.png"
-            halign: "left"
-            valign: "top"
-            on_release: self.open_settings()
-    AnchorLayout:
-        anchor_x: "right"
-        anchor_y: "top"
-        OptionsButton:
-            size_hint: None, None
-            size: 25, 25
-            border: (0, 0, 0, 0)
-            background_down: f'{application_path}/resources/images/more_vert.png'
-            background_normal: f'{application_path}/resources/images/more_vert.png'
-            halign: "right"
-            valign: "top"
-            on_release: Factory.Options().open()
+    spacing: 5
+    BackButton:
+        size_hint: None, 1
+        size: 25, 25
+        border: (0, 0, 0, 0)
+        source: f"{application_path}/resources/images/arrow_back.png"
+        halign: "left"
+        valign: "top"
+        on_release: self.go_back()
+    Label:
+    ImageButton:
+        source: f"{application_path}/resources/images/search.png"
+        on_release: Logger.info("TODO: search") # app.open_search()
+        size_hint: None, 1
+        size: 25, 25
+        border: (0, 0, 0, 0)
+    SettingsButton:
+        size_hint: None, 1
+        size: 25, 25
+        border: (0, 0, 0, 0)
+        source: f"{application_path}/resources/images/settings.png"
+        halign: "left"
+        valign: "top"
+        on_release: self.open_settings()
 
 <OptionsPlayButton>:
     text: "Play"
@@ -322,7 +320,7 @@
         size: self.texture_size
         font_name: app.font
         text: root.track_pos
-    IconButton:
+    LibraryPlayButton:
         id: lib_play_button
         source: f"{application_path}/resources/images/play_circle.png"
         fit_mode: "scale-down"
@@ -635,11 +633,10 @@
         size: self.texture_size
         valign: "center"
         halign: "center"
-    # Tried ImageButton@Image+ButtonBehavior. Its on_release doesnt work for some reason
     AnchorLayout:
         size_hint: None, 1
         size: 25, 25
-        Button:
+        ImageButton:
             id: uv_options
             # background_down: f'{application_path}/resources/images/more_vert.png'
             # background_normal: f'{application_path}/resources/images/more_vert.png'
@@ -647,8 +644,6 @@
             on_release: Factory.TrackOptions(root.index).open()
             border: (0, 0, 0, 0)
             background_color: (0, 0, 0, 0)
-            background_normal: ""
-        Image:
             source: f'{application_path}/resources/images/more_vert.png'
             fit_mode: "scale-down"
 
@@ -671,7 +666,6 @@
             on_release: root.add_to_queue()
         InsertNextButton:
             on_release: root.insert_next()
-
 
 <QueueView>:
     viewclass: "TrackView"
