@@ -14,13 +14,14 @@ from pathlib import Path
 from threading import Thread
 
 from pynput import keyboard
+from rapidfuzz import fuzz
 from kivy.app import App
 from kivy.clock import Clock
 from kivy.config import Config
 from kivy.logger import Logger
 from kivy.properties import (BooleanProperty, BoundedNumericProperty,
-                             DictProperty, ListProperty, NumericProperty,
-                             ObjectProperty, StringProperty)
+                             ColorProperty, DictProperty, ListProperty,
+                             NumericProperty, ObjectProperty, StringProperty)
 from kivy.uix.image import Image
 from kivy.uix.label import Label
 from kivy.uix.popup import Popup
@@ -30,6 +31,7 @@ from kivy.uix.spinner import Spinner
 from kivy.uix.behaviors import ButtonBehavior
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.modalview import ModalView
+from kivy.uix.textinput import TextInput
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.recycleview import RecycleView
 from kivy.uix.screenmanager import (CardTransition, NoTransition, Screen,
@@ -38,8 +40,9 @@ from kivy.uix.recycleview.views import RecycleKVIDsDataViewBehavior
 from kivy.core.audio import SoundLoader
 from kivy.core.window import Window
 
-from db import (create_db, db_exists, get_album_tracks, get_all_albums,
-                get_all_artists, get_all_tracks, get_artist_albums, remove_db)
+from db import (Album, Artist, create_db, db_exists, get_album_tracks,
+                get_all_albums, get_all_artists, get_all_tracks,
+                get_artist_albums, remove_db)
 from utils import application_path, get_cache_dir
 from config import Font, Size
 from metadata import Metadata
@@ -60,6 +63,7 @@ def formated_time(time: int|float) -> str:
     return f"{mins}:{secs:02}"
 
 # TODO: if audio device is disconnected stop music!
+
 
 class ImageButton(ButtonBehavior, Image):
     pass
@@ -215,6 +219,64 @@ class BackButton(ImageButton):
                 library_filter = library.ids.lib_filter
                 library_filter.set_filter(library_filter.filter_chosen)
                 library.last_opened_album = None
+
+
+class SearchTextInput(TextInput):
+    disabled = BooleanProperty(True)
+    background_color = ColorProperty((0, 0, 0, 0))
+    search_quote = "What would like to listen?"
+    quote_exists = False
+    should_search = False
+    search_event = None
+
+    def close_search(self):
+        app = App.get_running_app()
+        app.search_active = False
+        self.quote_exists = False
+        self.should_search = False
+        self.disabled = True
+        self.background_color = (0, 0, 0, 0)
+        self.text = ""
+
+    def open_search(self):
+        self.background_color = (255, 255, 255, 1)
+        self.text = self.search_quote
+        self.disabled = False
+        self.focus = True
+        self.cursor = (0, 0)
+        self.quote_exists = True
+        self.should_search = False
+        app = App.get_running_app()
+        app.search_active = True
+
+    def on_text(self, obj, value):
+        Logger.info(f"on_text triggered {self.quote_exists}, {self.should_search}")
+        if self.quote_exists:
+            self.text = value[0:1]
+            self.quote_exists = False
+            self.should_search = True
+        if self.should_search:
+            if self.search_event is not None:
+                self.search_event.cancel()
+            app = App.get_running_app()
+            self.search_event = Clock.schedule_once(lambda dt: app.search(self.text), 1)
+
+    def on_focus(self, obj, value):
+        app = App.get_running_app()
+        if value is False:
+            if self.text == "" or self.text == self.search_quote:
+                self.close_search()
+                app.hide_clear_button()
+
+
+class ClearButton(ImageButton):
+    color = ColorProperty((0, 0, 0, 0))
+
+    def hide_button(self):
+        self.color = (0, 0, 0, 0)
+
+    def show_button(self):
+        self.color = (255, 255, 255, 1)
 
 
 class AddToQueueButton(Button):
@@ -573,7 +635,7 @@ class PlayerScreen(Screen):
             self.on_now_playing_pos(self, pos)
         self.now_playing_pos = pos
 
-    # Doesn't work under Wayland
+    # FIXME: Doesn't work under Wayland
     def keyboard_listener_setup(self):
         def on_release(key):
             root = App.get_running_app().root.get_screen("player")
@@ -740,7 +802,7 @@ class TrackView(RecycleKVIDsDataViewBehavior, BoxLayout, Button):
             if not self.now_playing:
                 player._set_now_playing_pos(self.index)
         elif screen == "library":
-            queue = app.songs
+            queue = app.last_data
             if app.player is not None:
                 app.player.stop_and_delete()
                 app.player.update_queue_and_now_pos(queue, self.index)
@@ -765,18 +827,6 @@ class TrackView(RecycleKVIDsDataViewBehavior, BoxLayout, Button):
             if app.queue_screen is None:
                 Clock.schedule_once(lambda dt: create_queue_screen(), -1)
             Clock.schedule_once(lambda dt: app.player.sound_provider.play(), 1)
-
-            # if app.lib_player is None:
-            #     lib_player = LibraryPlayer()
-            #     app.lib_player = lib_player
-            #     library.ids.lib_box.add_widget(lib_player)
-            #     queue = [app.songs[self.index]]
-            #     player = PlayerScreen(name="player", queue=queue)
-            #     app.root.add_widget(player)
-            # else:
-            #     player = app.root.get_screen("player")
-            #     queue = [app.songs[self.index]]
-            #     player.queue = queue
 
 
 # TODO: move tracks in qv by holding button
@@ -898,38 +948,51 @@ class LibraryView(JumpRecycleView):
     hl_pos = NumericProperty(0)
     row_ids = DictProperty()
 
-    def update_lv(self):
+    def update_lv(self, data: list):
         app = App.get_running_app()
+        app.last_data = data
+        if data != []:
+            if type(data[0]) is Artist:
+                self.view_class = "ArtistView"
+            elif type(data[0]) is Album:
+                self.view_class = "AlbumView"
+            elif type(data[0]) is Metadata:
+                self.view_class = "TrackView"
+        # TODO: rewrite this part
         if self.view_class == "TrackView":
             self.data = [{"index": i,
-                          "cover.source": app.songs[i].image,
-                          "title.text": app.songs[i].title,
-                          "artist.text": app.songs[i].artist,
-                          "duration.text": formated_time(app.songs[i].length),
+                          "cover.source": data[i].image,
+                          "title.text": data[i].title,
+                          "artist.text": data[i].artist,
+                          "duration.text": formated_time(data[i].length),
                           "now_playing": False}
-                         for i in range(len(app.songs))]
-            self.row_ids = {song.id: i for i, song in enumerate(app.songs)}
+                         for i in range(len(data))]
+            self.row_ids = {song.id: i for i, song in enumerate(data)}
             try:
                 self.update_hl()
             except Exception:
                 pass
-            # Logger.info(f"songs - {app.songs}")
         elif self.view_class == "AlbumView":
-            self.data = [{"cover.source": app.albums[i].image,
-                          "title.text": app.albums[i].title,
-                          "artist_year.text": f"{app.albums[i].artist} - {app.albums[i].year}"}
-                         for i in range(len(app.albums))]
+            self.data = [{"cover.source": data[i].image,
+                          "title.text": data[i].title,
+                          "artist_year.text": f"{data[i].artist} - {data[i].year}"}
+                         for i in range(len(data))]
         elif self.view_class == "ArtistView":
-            self.data = [{"cover.source": app.artists[i].image,
-                          "name.text": app.artists[i].name}
-                         for i in range(len(app.artists))]
+            self.data = [{"cover.source": data[i].image,
+                          "name.text": data[i].name}
+                         for i in range(len(data))]
         else:
+            Logger.error(f"Library: Couldn't render library {self.view_class}")
             self.view_class = "Label"
             self.data = [{"text": "Couldn't render library"}]
 
-        if app.songs == [] or app.artists == [] or app.albums == []:
-            self.view_class = "Label"
-            self.data = [{"text": "Set up music path and start scanning in the settings"}]
+        if data == []:
+            if not app.search_active:
+                self.view_class = "Label"
+                self.data = [{"text": "Set up music path and start scanning in the settings"}]
+            else:
+                self.view_class = "Label"
+                self.data = [{"text": "Nothing found"}]
         self.jump_to_index(0)
 
     def update_hl(self):
@@ -1014,7 +1077,8 @@ class LibraryFilter(GridLayout):
 
     def set_filter(self, filter: Filter):
         self.reset_hl()
-        library = App.get_running_app().root.get_screen("library")
+        app = App.get_running_app()
+        library = app.root.get_screen("library")
         if self.filter_chosen == filter:
             self.on_filter_chosen(self, filter)
         self.filter_chosen = filter
@@ -1024,7 +1088,7 @@ class LibraryFilter(GridLayout):
             library.ids.filter_artists.chosen_filter = True
         elif self.filter_chosen == Filter.songs:
             library.ids.filter_songs.chosen_filter = True
-        library.ids.lv.update_lv()
+        library.ids.lv.update_lv(app.get_data_by_filter())
 
     def on_filter_chosen(self, obj, value):
         library = App.get_running_app().root.get_screen("library")
@@ -1054,20 +1118,24 @@ class LibraryScreen(Screen):
 
     def open_album(self, name: str):
         app = App.get_running_app()
-        app.update_songs(get_album_tracks(name))
+        songs = get_album_tracks(name)
+        app.last_data = songs
         self.ids.lv.view_class = "TrackView"
-        self.ids.lv.update_lv()
+        self.ids.lv.update_lv(songs)
         self.last_opened_album = name
 
     def open_artist(self, name: str):
         app = App.get_running_app()
-        app.update_albums(get_artist_albums(name))
+        albums = get_artist_albums(name)
+        app.last_data = albums
         self.ids.lv.view_class = "AlbumView"
-        self.ids.lv.update_lv()
+        self.ids.lv.update_lv(albums)
         self.last_opened_artist = name
 
+    # TODO: remove this, it is only being used in .kv
     def update_lv(self):
-        Clock.schedule_once(lambda dt: self.ids.lv.update_lv(), -1)
+        app = App.get_running_app()
+        Clock.schedule_once(lambda dt: self.ids.lv.update_lv(app.get_data_by_filter()), -1)
 
     def update_hl(self):
         self.ids.lv.update_hl()
@@ -1082,12 +1150,14 @@ class SimplePlayer(App):
     repeat_variants = {"repeat": "Repeat",
                        "no_repeat": "No repeat",
                        "repeat_queue": "Repeat queue"}
+    last_data = ListProperty()
     songs = ListProperty()
     albums = ListProperty()
     artists = ListProperty()
     lib_player = ObjectProperty(None)
     player = ObjectProperty(None)
     queue_screen = ObjectProperty(None)
+    search_active = False
 
     def build(self):
         self.font = Font.main
@@ -1102,11 +1172,60 @@ class SimplePlayer(App):
         # sm.add_widget(QueueScreen(name="queue"))
         return sm
 
-    # def open_album(self, album):
-    #     library = self.root.get_screen("library")
-    #     self.update_songs(get_album_tracks(album))
-    #     library.ids.lv.view_class = "TrackView"
-        # library.ids.lv.refresh_from_data()
+    def search(self, text):
+        library = App.get_running_app().root.get_screen("library")
+        filter = library.ids.lib_filter.filter_chosen
+        search_res = []
+        search_ratio = 60
+        Logger.info(f"Library: Searching for {text} in {filter}")
+        if self.last_data != []:
+            if type(self.last_data[0]) is Artist:
+                for artist in self.last_data:
+                    ratio = fuzz.partial_ratio(text.lower(), artist.name.lower())
+                    if ratio >= search_ratio:
+                        Logger.info(f"Library: Found {ratio}, {artist.name}")
+                        search_res.append([artist, ratio])
+            elif type(self.last_data[0]) is Album:
+                for album in self.last_data:
+                    ratio = fuzz.partial_ratio(text.lower(), album.title.lower())
+                    if ratio >= search_ratio:
+                        Logger.info(f"Library: Found {ratio}, {album.title}")
+                        search_res.append([album, ratio])
+            elif type(self.last_data[0]) is Metadata:
+                for song in self.last_data:
+                    ratio = fuzz.partial_ratio(text.lower(), song.title.lower())
+                    if ratio >= search_ratio:
+                        Logger.info(f"Library: Found {ratio}, {song.title}")
+                        search_res.append([song, ratio])
+        search_res = sorted(search_res, key=lambda obj: obj[1], reverse=True)
+        search_res = [search[0] for search in search_res]
+        self.update_lv(search_res)
+
+    def hide_clear_button(self):
+        library = self.root.get_screen("library")
+        library.ids.lib_top_panel.ids.clear_button.hide_button()
+
+    def clear_search(self):
+        library = self.root.get_screen("library")
+        library.ids.lib_top_panel.ids.search_text_input.close_search()
+        library.ids.lib_top_panel.ids.clear_button.hide_button()
+        self.update_lv(self.get_data_by_filter())
+
+    def open_search(self):
+        library = self.root.get_screen("library")
+        library.ids.lib_top_panel.ids.search_text_input.open_search()
+        library.ids.lib_top_panel.ids.clear_button.show_button()
+
+    def get_data_by_filter(self) -> list:
+        library = App.get_running_app().root.get_screen("library")
+        filter = library.ids.lib_filter.filter_chosen
+        if filter == Filter.artists:
+            return self.artists
+        elif filter == Filter.albums:
+            return self.albums
+        elif filter == Filter.songs:
+            return self.songs
+        raise Exception("Error: Unreachable")
 
     def player_exists(self) -> bool:
         if self.player is not None:
@@ -1132,15 +1251,15 @@ class SimplePlayer(App):
             if self.repeat_variants["repeat_queue"] == self.repeat:
                 player.sound_provider.loop = False
 
-    def update_lv(self):
-        self.root.get_screen("library").ids.lv.update_lv()
+    def update_lv(self, data: list):
+        self.root.get_screen("library").ids.lv.update_lv(data)
 
     def set_default_filter(self):
         # self.update_artists(get_all_artists())
         library = App.get_running_app().root.get_screen("library")
         library.ids.lib_filter.set_filter(Filter.artists)
         library.ids.lv.view_class = "ArtistView"
-        self.update_lv()
+        self.update_lv(self.get_data_by_filter())
 
     def on_start(self):
         try:
@@ -1155,7 +1274,6 @@ class SimplePlayer(App):
             Clock.schedule_once(lambda dt: self.update_albums(get_all_albums()), -1)
             Clock.schedule_once(lambda dt: self.update_artists(get_all_artists()), -1)
             Clock.schedule_once(lambda dt: self.set_default_filter(), -1)
-        # Clock.schedule_once(lambda dt: self.update_lv(), -1)
 
     def on_stop(self):
         with open(self.volume_path, "w") as f:

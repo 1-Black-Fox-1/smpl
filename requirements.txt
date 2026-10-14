@@ -19,6 +19,7 @@ pyinstaller==6.20.0
 pyinstaller-hooks-contrib==2026.5
 pynput==1.8.2
 python-xlib==0.33
+RapidFuzz==3.14.6
 requests==2.34.2
 setuptools==82.0.1
 six==1.17.0

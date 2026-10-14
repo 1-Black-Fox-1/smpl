@@ -91,6 +91,7 @@
                 multiline: False
                 font_name: app.font
                 on_text_validate: root.save_music_path()
+                cursor_blink: False
             Button:
                 height: 30
                 size_hint_y: None
@@ -107,7 +108,6 @@
             fit_mode: "scale-down"
             on_release: self.scan()
 
-
 <LibraryTopPanel@BoxLayout>:
     size_hint: Size.top_buttons
     spacing: 5
@@ -116,13 +116,30 @@
         size: 25, 25
         border: (0, 0, 0, 0)
         source: f"{application_path}/resources/images/arrow_back.png"
-        halign: "left"
-        valign: "top"
         on_release: self.go_back()
-    Label:
+    SearchTextInput:
+        id: search_text_input
+        background_color: self.background_color
+        disabled: self.disabled
+        size_hint: 1, None
+        pos_hint: {"center_y": .5}
+        size: 25, 25
+        font_name: app.font
+        font_size: 16
+        multiline: False
+        focus: False
+        cursor_blink: False
+    ClearButton:
+        id: clear_button
+        source: f"{application_path}/resources/images/clear.png"
+        on_release: app.clear_search()
+        size_hint: None, 1
+        size: 25, 25
+        border: (0, 0, 0, 0)
+        background_color: self.color
     ImageButton:
         source: f"{application_path}/resources/images/search.png"
-        on_release: Logger.info("TODO: search") # app.open_search()
+        on_release: app.open_search()
         size_hint: None, 1
         size: 25, 25
         border: (0, 0, 0, 0)
@@ -131,8 +148,6 @@
         size: 25, 25
         border: (0, 0, 0, 0)
         source: f"{application_path}/resources/images/settings.png"
-        halign: "left"
-        valign: "top"
         on_release: self.open_settings()
 
 <OptionsPlayButton>:
@@ -347,6 +362,7 @@
         spacing: Spacing.box
 
         LibraryTopPanel:
+            id: lib_top_panel
 
         LibraryFilter:
             id: lib_filter
