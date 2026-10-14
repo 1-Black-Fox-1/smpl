@@ -43,6 +43,9 @@ from kivy.core.window import Window
 from db import (Album, Artist, create_db, db_exists, get_album_tracks,
                 get_all_albums, get_all_artists, get_all_tracks,
                 get_artist_albums, remove_db)
+
+# if __name__ != "__main__":
+from dbus import player_interface
 from utils import application_path, get_cache_dir
 from config import Font, Size
 from metadata import Metadata
@@ -121,6 +124,7 @@ class PreviousButton(Button):
         if root.track_pos > root.time_move_to_start or root.first_in_queue():
             root.sound_provider.seek(0)
             app.pause_pos = 0
+            player_interface.Seeked(0)
         else:
             root._set_now_playing_pos(root.now_playing_pos - 1)
 
@@ -140,6 +144,7 @@ class SeekForwardButton(Button):
         app.pause_pos = time_to_seek
         root.update_slider_value()
         root.update_pos()
+        player_interface.Seeked(time_to_seek)
 
 
 class SeekBackwardButton(Button):
@@ -151,6 +156,7 @@ class SeekBackwardButton(Button):
         app.pause_pos = time_to_seek
         root.update_slider_value()
         root.update_pos()
+        player_interface.Seeked(time_to_seek)
 
 
 class QueueButton(Button):
@@ -533,6 +539,7 @@ class MusicSlider(Slider):
             root.sound_provider.seek(self.value)
             root.track_pos = self.value
             app.pause_pos = self.value
+            player_interface.Seeked(self.value)
 
     def slider_up(self, touch, obj):
         # Logger.info(f'{touch}, {obj}')
@@ -542,6 +549,7 @@ class MusicSlider(Slider):
             root.sound_provider.seek(self.value)
             root.track_pos = self.value
             app.pause_pos = self.value
+            player_interface.Seeked(self.value)
 
 
 class PosLabel(Label):
@@ -596,6 +604,18 @@ class PlayerScreen(Screen):
         Clock.schedule_once(lambda dt:
                             self.update_lib_pos_event.cancel(),
                             update_slider_frequency)
+
+    def pause(self):
+        app = App.get_running_app()
+        app.pause_pos = self.sound_provider.get_pos()
+        self.sound_provider.stop()
+        Logger.info("Player: Stop playing")
+
+    def stop(self):
+        app = App.get_running_app()
+        app.pause_pos = 0
+        self.sound_provider.stop()
+        Logger.info("Player: Stop playing")
 
     def insert_next(self, songs: list[Metadata]):
         new_queue = []
@@ -689,6 +709,7 @@ class PlayerScreen(Screen):
         self.bind_update_pos()
         self.sound_provider.bind(on_stop=self.auto_play_next)
         self.sound_provider.volume = app.volume
+        player_interface.emit_properties_changed({"Metadata": player_interface.create_dbus_metadata(self.now_playing)})
         if prev_track_loop is not None:
             self.sound_provider.loop = prev_track_loop
         if prev_track_state == "play":
@@ -710,7 +731,10 @@ class PlayerScreen(Screen):
         player = sm.get_screen("player")
         # if player.sound_provider is not None:
         player.sound_provider.bind(on_play=player.ids.play_button.background_on_play)
+        player.sound_provider.bind(on_play=lambda dt: player_interface.emit_properties_changed({"PlaybackStatus": "Playing"}))
         player.sound_provider.bind(on_stop=player.ids.play_button.background_on_pause)
+        player.sound_provider.bind(on_stop=lambda dt: player_interface.emit_properties_changed({"PlaybackStatus": "Stopped"}))
+
 
         # Should be in lib player actually
         def bind_lib_player():
@@ -1146,7 +1170,9 @@ class SimplePlayer(App):
                                     errorhander=lambda x: 1 if x > 1 else 0)
     volume_path = Path(get_cache_dir()).joinpath("volume.json")
     pause_pos = NumericProperty(0)
+    # TODO: save loop status in config
     repeat = StringProperty("No repeat")
+    # TODO: should be enum
     repeat_variants = {"repeat": "Repeat",
                        "no_repeat": "No repeat",
                        "repeat_queue": "Repeat queue"}
@@ -1246,10 +1272,13 @@ class SimplePlayer(App):
             player = self.get_running_app().root.get_screen("player")
             if self.repeat_variants["repeat"] == self.repeat:
                 player.sound_provider.loop = True
+                player_interface.emit_properties_changed({"LoopStatus": "Track"})
             if self.repeat_variants["no_repeat"] == self.repeat:
                 player.sound_provider.loop = False
+                player_interface.emit_properties_changed({"LoopStatus": "None"})
             if self.repeat_variants["repeat_queue"] == self.repeat:
                 player.sound_provider.loop = False
+                player_interface.emit_properties_changed({"LoopStatus": "Playlist"})
 
     def update_lv(self, data: list):
         self.root.get_screen("library").ids.lv.update_lv(data)
@@ -1274,6 +1303,10 @@ class SimplePlayer(App):
             Clock.schedule_once(lambda dt: self.update_albums(get_all_albums()), -1)
             Clock.schedule_once(lambda dt: self.update_artists(get_all_artists()), -1)
             Clock.schedule_once(lambda dt: self.set_default_filter(), -1)
+
+    def on_volume(self, obj, value):
+        Logger.info(f"App: Volume changed to {value}")
+        player_interface.emit_properties_changed({"Volume": value})
 
     def on_stop(self):
         with open(self.volume_path, "w") as f:
