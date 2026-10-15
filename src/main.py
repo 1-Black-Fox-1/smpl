@@ -1190,6 +1190,7 @@ class SimplePlayer(App):
         Window.size = Size.minimal
         self.title = "Simple Player"
         self.icon = f"{application_path}/resources/images/simple-player.png"
+        self.display_settings = lambda dt: None
 
         sm = ScreenManager(transition=CardTransition())
         sm.add_widget(LibraryScreen(name="library"))

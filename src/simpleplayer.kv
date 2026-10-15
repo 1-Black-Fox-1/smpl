@@ -659,9 +659,6 @@
         size: 25, 25
         ImageButton:
             id: uv_options
-            # background_down: f'{application_path}/resources/images/more_vert.png'
-            # background_normal: f'{application_path}/resources/images/more_vert.png'
-            # on_release: Logger.info("TODO: open options")
             on_release: Factory.TrackOptions(root.index).open()
             border: (0, 0, 0, 0)
             background_color: (0, 0, 0, 0)
