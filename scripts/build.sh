@@ -15,32 +15,41 @@ if [ "$VIRTUAL_ENV" == "" ]; then
     source "${VENV_DIR}/bin/activate"
 fi
 
+print_help () {
+    echo "smpl build.sh - build your smpl from scratch"
+    echo " "
+    echo "build.sh [options]"
+    echo " "
+    echo "options:"
+    echo "-h, --help                show help"
+    echo "--no-async                build with no async support. Effects mpris"
+    echo "--no-clean                don't clear build files"
+}
+
 while [ $# -gt 0 ]; do
-  case "$1" in
-    -h|--help)
-      echo "smpl build.sh - build your smpl from scratch"
-      echo " "
-      echo "build.sh [options]"
-      echo " "
-      echo "options:"
-      echo "-h, --help                show brief help"
-      echo "--no-async                build with no async support. Effects mpris"
-      echo "--no-clean                dont clear build files"
-      exit 0
-      ;;
-    --no-async)
-        ASYNC=false
-      shift
-      ;;
-    --no-clean)
-        CLEAN=false
-      shift
-      ;;
-    *)
-      break
-      ;;
-  esac
+    case "$1" in
+        -h|--help)
+            print_help
+            exit 0
+            ;;
+        --no-async)
+            ASYNC=false
+            shift
+            ;;
+        --no-clean)
+            CLEAN=false
+            shift
+            ;;
+        *)
+            echo "Unknown option $1"
+            echo
+            print_help
+            exit 1
+            ;;
+    esac
 done
+
+exit
 
 if $ASYNC; then
     MAIN="${SCRIPT_DIR}/../src/asyncmain.py"
