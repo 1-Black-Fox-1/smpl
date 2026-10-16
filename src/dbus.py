@@ -1,4 +1,5 @@
 from pathlib import Path
+from asyncio.exceptions import CancelledError
 
 from kivy.app import App
 from kivy.logger import Logger
@@ -280,5 +281,7 @@ async def start_dbus():
     bus.export(bus_path, player_interface)
     await bus.request_name(bus_name)
     Logger.info("Dbus: Ready")
-    await bus.wait_for_disconnect()
-    Logger.info("Dbus: Stopped")
+    try:
+        await bus.wait_for_disconnect()
+    except CancelledError:
+        Logger.info("Dbus: Stopped")
