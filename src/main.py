@@ -438,7 +438,7 @@ class TrackOptions(ModalView):
         root = app.root
         self.index = index
         if root.current == "library":
-            self.song: Metadata = app.songs[index]
+            self.song: Metadata = app.last_data[index]
         elif root.current == "queue" and app.player_exists:
             self.song: Metadata = app.player.queue[index]
 
