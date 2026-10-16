@@ -124,6 +124,7 @@ class PreviousButton(Button):
         if root.track_pos > root.time_move_to_start or root.first_in_queue():
             root.sound_provider.seek(0)
             app.pause_pos = 0
+            root.track_pos = 0
             player_interface.Seeked(0)
         else:
             root._set_now_playing_pos(root.now_playing_pos - 1)
@@ -653,6 +654,7 @@ class PlayerScreen(Screen):
         self.queue = queue
         if self.now_playing_pos == pos:
             self.on_now_playing_pos(self, pos)
+            return
         self.now_playing_pos = pos
 
     # FIXME: Doesn't work under Wayland
