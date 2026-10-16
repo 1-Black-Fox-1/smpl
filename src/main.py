@@ -760,19 +760,18 @@ class PlayerScreen(Screen):
     def auto_play_next(self, obj):
         app = App.get_running_app()
         root = app.root.get_screen("player")
-        if abs(self.track_pos - self.length) < 1.5:
+        if abs(self.track_pos - self.length) < 1.0:
             if (self.last_in_queue() and app.repeat == app.repeat_variants["repeat_queue"]):
                 root._set_now_playing_pos(0)
                 Clock.schedule_once(lambda dt: root.sound_provider.play(), 0)
                 return
-        if self.last_in_queue():
-            return
-        # Logger.info('Auto play next tried')
-        # Logger.info(f'{round(self.track_pos)} == {round(self.length)}')
-        # Logger.info(f'{(self.track_pos)} == {(self.length)}')
-        # Logger.info(abs(self.track_pos - self.length))
-        # there is math.ceil() to round UP to int
-        if abs(self.track_pos - self.length) < 0.5:
+            if self.last_in_queue():
+                root.sound_provider.seek(0)
+                app.pause_pos = 0
+                root.track_pos = 0
+                app.player.slider_value = 0
+                player_interface.Seeked(0)
+                return
             Logger.info("Player: Auto play next succeded")
             root._set_now_playing_pos(root.now_playing_pos + 1)
             Clock.schedule_once(lambda dt: root.sound_provider.play(), 0)
