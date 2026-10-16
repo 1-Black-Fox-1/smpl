@@ -163,7 +163,6 @@ class SeekBackwardButton(Button):
 class QueueButton(Button):
     def open_queue(self):
         sm = App.get_running_app().root
-        # FIXME: white transition
         sm.transition = CardTransition()
         sm.transition.direction = "up"
         sm.transition.mode = "push"
@@ -657,7 +656,6 @@ class PlayerScreen(Screen):
             return
         self.now_playing_pos = pos
 
-    # FIXME: Doesn't work under Wayland
     def keyboard_listener_setup(self):
         def on_release(key):
             root = App.get_running_app().root.get_screen("player")
@@ -890,7 +888,6 @@ class QueueScreen(Screen):
 
 class CloseQueueButton(Button):
     def close_queue(self):
-        # FIXME: screen turns a little white when transition works
         sm = App.get_running_app().root
         sm.transition = CardTransition()
         sm.transition.direction = "down"

@@ -13,9 +13,11 @@ class Spacing:
     player_buttons: int = 15
 
 class Color:
-    background: tuple[int, int, int, float] = 37, 36, 34, 0.15
+    # background: tuple[int, int, int, float] = 37, 36, 34, 0.15
+    background = (0x1b/255, 0x1d/255, 0x1e/255, 1)
+
     # now_playing_background = background
-    now_playing_background = 37, 36, 34, 0.3
+    now_playing_background = (2 * 0x1b/255, 2 * 0x1d/255, 2 * 0x1e/255, 1)
     foreground: tuple[int, int, int, float] = 255, 140, 0, 1
     slider_track = foreground
 
