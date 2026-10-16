@@ -272,6 +272,8 @@
 
 <LibraryView>:
     viewclass: self.view_class
+    # TODO crate bar for library view
+    # bar_width: dp(6)
     bar_width: dp(0)
     scroll_wheel_distance: dp(56)
     effect_cls: ScrollEffect
@@ -735,3 +737,26 @@
                 size_hint: None, None
                 pos_hint: {"center_x": .5}
                 size: 100, 50
+
+<ExitDialog>:
+    size_hint: None, None
+    size: 300, 150
+    GridLayout:
+        rows: 2
+        Label:
+            text: "Are you sure you want to exit?"
+            font_name: app.font
+        GridLayout:
+            cols: 2
+            Button:
+                text: "Yes"
+                on_release: app.stop()
+                border: (0, 0, 0, 0)
+                background_color: (0, 0, 0, 0)
+                background_normal: ""
+            Button:
+                text: "No"
+                on_release: root.dismiss()
+                border: (0, 0, 0, 0)
+                background_color: (0, 0, 0, 0)
+                background_normal: ""

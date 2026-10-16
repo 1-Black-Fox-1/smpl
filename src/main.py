@@ -19,6 +19,7 @@ from kivy.app import App
 from kivy.clock import Clock
 from kivy.config import Config
 from kivy.logger import Logger
+from kivy.factory import Factory
 from kivy.properties import (BooleanProperty, BoundedNumericProperty,
                              ColorProperty, DictProperty, ListProperty,
                              NumericProperty, ObjectProperty, StringProperty)
@@ -225,6 +226,12 @@ class BackButton(ImageButton):
                 library_filter = library.ids.lib_filter
                 library_filter.set_filter(library_filter.filter_chosen)
                 library.last_opened_album = None
+            else:
+                Factory.ExitDialog().open()
+
+
+class ExitDialog(ModalView):
+    pass
 
 
 class SearchTextInput(TextInput):
