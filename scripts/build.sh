@@ -1,7 +1,6 @@
 #!/bin/bash
 
 #TODO: edit venv varibles from flags
-#TODO: handle errors
 
 # Rename if you have different venv dir name
 VENV="venv"
@@ -13,6 +12,9 @@ VENV_ACTIVATED=false
 if [ "$VIRTUAL_ENV" == "" ]; then
     VENV_ACTIVATED=true
     source "${VENV_DIR}/bin/activate"
+    if [ $? -ne 0 ]; then
+        exit
+    fi
 fi
 
 print_help () {
@@ -48,8 +50,6 @@ while [ $# -gt 0 ]; do
             ;;
     esac
 done
-
-exit
 
 if $ASYNC; then
     MAIN="${SCRIPT_DIR}/../src/asyncmain.py"

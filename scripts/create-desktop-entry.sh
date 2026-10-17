@@ -28,6 +28,7 @@ chmod 700 $DESKTOP_PATH
 # cat $DESKTOP_PATH
 echo "Created at $DESKTOP_PATH"
 
+echo "sudo is needed if you want icon for .desktop file"
 sudo cp $SCRIPT_DIR/../src/resources/images/simple-player.png $ICON_PATH
 if [ $? -ne 0 ]; then
     # echo "Can't create icon"
