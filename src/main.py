@@ -360,7 +360,6 @@ class SearchTextInput(TextInput):
         app.search_active = True
 
     def on_text(self, obj, value):
-        Logger.info(f"on_text triggered {self.quote_exists}, {self.should_search}")
         if self.quote_exists:
             self.text = value[0:1]
             self.quote_exists = False
@@ -1302,26 +1301,24 @@ class SimplePlayer(App):
         return sm
 
     def search(self, text):
-        library = App.get_running_app().root.get_screen("library")
-        filter = library.ids.lib_filter.filter_chosen
         search_res = []
         search_ratio = 60
-        Logger.info(f"Library: Searching for {text} in {filter}")
-        if self.last_data != []:
-            if type(self.last_data[0]) is Artist:
-                for artist in self.last_data:
+        assert (self.before_search_data is not None)
+        if self.before_search_data != []:
+            if type(self.before_search_data[0]) is Artist:
+                for artist in self.before_search_data:
                     ratio = fuzz.partial_ratio(text.lower(), artist.name.lower())
                     if ratio >= search_ratio:
                         Logger.info(f"Library: Found {ratio}, {artist.name}")
                         search_res.append([artist, ratio])
-            elif type(self.last_data[0]) is Album:
-                for album in self.last_data:
+            elif type(self.before_search_data[0]) is Album:
+                for album in self.before_search_data:
                     ratio = fuzz.partial_ratio(text.lower(), album.title.lower())
                     if ratio >= search_ratio:
                         Logger.info(f"Library: Found {ratio}, {album.title}")
                         search_res.append([album, ratio])
-            elif type(self.last_data[0]) is Metadata:
-                for song in self.last_data:
+            elif type(self.before_search_data[0]) is Metadata:
+                for song in self.before_search_data:
                     ratio = fuzz.partial_ratio(text.lower(), song.title.lower())
                     if ratio >= search_ratio:
                         Logger.info(f"Library: Found {ratio}, {song.title}")
