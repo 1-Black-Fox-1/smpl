@@ -14,29 +14,20 @@
 <TopPanel@BoxLayout>:
     size_hint: Size.top_buttons
     orientation: 'horizontal'
-    AnchorLayout:
-        anchor_x: "left"
-        anchor_y: "top"
-        BackButton:
-            size_hint: None, None
-            size: 25, 25
-            border: (0, 0, 0, 0)
-            source: f'{application_path}/resources/images/arrow_back.png'
-            halign: "left"
-            valign: "top"
-            on_release: self.go_back()
-    AnchorLayout:
-        anchor_x: "right"
-        anchor_y: "top"
-        OptionsButton:
-            size_hint: None, None
-            size: 25, 25
-            border: (0, 0, 0, 0)
-            background_down: f'{application_path}/resources/images/more_vert.png'
-            background_normal: f'{application_path}/resources/images/more_vert.png'
-            halign: "right"
-            valign: "top"
-            on_release: Factory.Options().open()
+    BackButton:
+        size_hint: None, 1
+        size: 25, 25
+        border: (0, 0, 0, 0)
+        source: f'{application_path}/resources/images/arrow_back.png'
+        on_release: self.go_back()
+    Widget:
+    OptionsButton:
+        size_hint: None, 1
+        size: 25, 25
+        border: (0, 0, 0, 0)
+        background_down: f'{application_path}/resources/images/more_vert.png'
+        background_normal: f'{application_path}/resources/images/more_vert.png'
+        on_release: Factory.Options().open()
 
 <PathView>:
     pos:
@@ -74,7 +65,7 @@
         border: (0, 0, 0, 0)
         source: f"{application_path}/resources/images/arrow_back.png"
         on_release: self.go_back()
-    Label:
+    Widget:
     SettingsButton:
         size_hint: None, 1
         size: 25, 25
@@ -131,7 +122,7 @@
             height: 30
             size_hint_y: None
             size_hint_x: 0.2
-            fit_mode: "scale-down"
+            fit_mode: "contain"
             on_release: self.scan()
 
 <LibraryTopPanel@BoxLayout>:
@@ -216,7 +207,7 @@
     Image:
         id: cover
         size_hint: None, 1
-        fit_mode: "scale-down"
+        fit_mode: "contain"
     BoxLayout:
         orientation: "vertical"
         Label:
@@ -252,7 +243,7 @@
             background_normal: ""
         Image:
             source: f'{application_path}/resources/images/more_vert.png'
-            fit_mode: "scale-down"
+            fit_mode: "contain"
 
 <ArtistView>:
     on_release: self.open_artist()
@@ -262,7 +253,7 @@
     Image:
         id: cover
         size_hint: None, 1
-        fit_mode: "scale-down"
+        fit_mode: "contain"
     BoxLayout:
         orientation: "vertical"
         Label:
@@ -298,7 +289,7 @@
             background_normal: ""
         Image:
             source: f'{application_path}/resources/images/more_vert.png'
-            fit_mode: "scale-down"
+            fit_mode: "contain"
 
 <LibraryView>:
     viewclass: self.view_class
@@ -329,7 +320,6 @@
             pos: self.pos
 
 <LibraryPlayer>:
-    cols: 4
     on_release: self.open_player()
     border: (0, 0, 0, 0)
     background_color: (0, 0, 0, 0)
@@ -342,7 +332,7 @@
         size_hint: 1, 1
         source: app.player.now_playing.image
         size: self.texture_size
-        fit_mode: "scale-down"
+        fit_mode: "contain"
     GridLayout:
         rows: 2
         Label:
@@ -372,10 +362,14 @@
         size: self.texture_size
         font_name: app.font
         text: root.track_pos
+        pos_hint: {"center_y": .5}
     LibraryPlayButton:
         id: lib_play_button
+        size_hint: None, None
+        size: 40, 40
+        pos_hint: {"center_y": .5}
         source: f"{application_path}/resources/images/play_circle.png"
-        fit_mode: "scale-down"
+        fit_mode: "contain"
         on_release: self.toggle_play()
 
 <LibraryScreen>:
@@ -458,13 +452,14 @@
                     size_hint_x: .8
                     height: 10
                     orientation: "horizontal"
-                    # size_hint: Size.slider
                     range: (0, 1)
                     value: app.volume
                     on_touch_move: self.slider_move(args[1], self)
                     on_touch_up: self.slider_up(args[1], self)
                     value_track: True if app.volume != 0 else False
                     value_track_color: Color.slider_track
+                    value_track_width: 3
+                    background_width: self.value_track_width * 8
                     step: 0.05
                     cursor_size: 0, 0
                 Label:
@@ -499,13 +494,15 @@
         TopPanel:
 
 # TODO: https://kivy.org/doc/stable/api-kivy.graphics.boxshadow.html
-        Cover:
+        Image:
             source: root.now_playing.image if root.now_playing is not None else None
-            size_hint: Size.image
+            fit_mode: "contain"
+            # size_hint: Size.image
         BoxLayout:
+            pos_hint: {"center_y": .5}
             size_hint: Size.title
             orientation: 'vertical'
-            spacing: Spacing.title
+            # spacing: Spacing.title
             TitleLabel:
                 shorten: True
                 shorten_from: 'right'
@@ -513,10 +510,11 @@
                 font_size: Size.title_font
                 size: self.texture_size
                 halign: "left"
-                valign: "bottom"
+                valign: "center"
                 text_size: self.size
                 max_lines: 1
                 font_name: app.font
+                pos_hint: {"center_y": .5}
             ArtistLabel:
                 shorten: True
                 shorten_from: 'right'
@@ -524,10 +522,11 @@
                 font_size: Size.artist_font
                 size: self.texture_size
                 halign: "left"
-                valign: "top"
+                valign: "center"
                 text_size: self.size
                 max_lines: 1
                 font_name: app.font
+                pos_hint: {"center_y": .5}
         MusicSlider:
             orientation: 'horizontal'
             size_hint: Size.slider
@@ -537,11 +536,11 @@
             on_touch_up: self.slider_up(args[1], self)
             value_track: True if root.slider_value != 0 else False
             value_track_color: Color.slider_track
+            value_track_width: 3
+            background_width: self.value_track_width * 8
             step: 2
             cursor_size: 0, 0
-            # sensitivity: 'handle'
-            # background_width: '4sp'
-            # value_track_width: '4sp'
+            pos_hint: {"center_y": .5}
         BoxLayout: 
             size_hint: Size.time
             orientation: 'horizontal'
@@ -566,14 +565,11 @@
             orientation: 'horizontal'
             spacing: Spacing.player_buttons
             padding: Padding.buttons
-            Button:
-                border: (0, 0, 0, 0)
-                background_color: (0, 0, 0, 0)
-                background_normal: ""
+            Widget:
             SeekBackwardButton:
                 pos_hint: {"center_x": 0}
                 size_hint: (None, None)
-                size: (50, 50)
+                size: (40, 40)
                 border: (0, 0, 0, 0)
                 background_down: f'{application_path}/resources/images/replay_10.png'
                 background_normal: f'{application_path}/resources/images/replay_10.png'
@@ -582,7 +578,7 @@
                 id: previous_button
                 pos_hint: {"center_x": .25}
                 size_hint: (None, None)
-                size: (50, 50)
+                size: (40, 40)
                 border: (0, 0, 0, 0)
                 background_down: f'{application_path}/resources/images/skip_previous.png'
                 background_normal: f'{application_path}/resources/images/skip_previous.png'
@@ -592,7 +588,7 @@
                 id: play_button
                 pos_hint: {"center_x": .5}
                 size_hint: (None, None)
-                size: (50, 50)
+                size: (40, 40)
                 # text: self.text
                 # background_color: (0, 0, 0, 0)
                 border: (0, 0, 0, 0)
@@ -603,7 +599,7 @@
                 id: next_button
                 pos_hint: {"center_x": .75}
                 size_hint: (None, None)
-                size: (50, 50)
+                size: (40, 40)
                 # text: 'Next'
                 border: (0, 0, 0, 0)
                 background_down: f'{application_path}/resources/images/skip_next.png'
@@ -612,15 +608,12 @@
             SeekForwardButton:
                 pos_hint: {"center_x": 1}
                 size_hint: (None, None)
-                size: (50, 50)
+                size: (40, 40)
                 border: (0, 0, 0, 0)
                 background_down: f'{application_path}/resources/images/forward_10.png'
                 background_normal: f'{application_path}/resources/images/forward_10.png'
                 # text: '+10'
-            Button:
-                border: (0, 0, 0, 0)
-                background_color: (0, 0, 0, 0)
-                background_normal: ""
+            Widget:
 
         AnchorLayout:
             # FIXME: if possible create button with image that can be smaller than button
@@ -656,7 +649,7 @@
     Image:
         id: cover
         size_hint: None, 1
-        fit_mode: "scale-down"
+        fit_mode: "contain"
     BoxLayout:
         orientation: "vertical"
         Label:
@@ -695,7 +688,7 @@
             border: (0, 0, 0, 0)
             background_color: (0, 0, 0, 0)
             source: f'{application_path}/resources/images/more_vert.png'
-            fit_mode: "scale-down"
+            fit_mode: "contain"
 
 <AddToQueueButton>:
     text: "Add to queue"

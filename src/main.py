@@ -179,9 +179,7 @@ class ImageButton(ButtonBehavior, Image):
     pass
 
 
-class Cover(Image):
-    # TODO: tap on image to open it fullscreen
-    cover_path = StringProperty()
+# TODO: tap on image to open it fullscreen
 
 
 class PlayButton(Button):
@@ -1226,7 +1224,7 @@ class LibraryFilter(GridLayout):
         library.last_opened_artist = None
 
 
-class LibraryPlayer(GridLayout, Button):
+class LibraryPlayer(BoxLayout, Button):
     track_pos = StringProperty("0:00/0:00")
 
     def open_player(self):

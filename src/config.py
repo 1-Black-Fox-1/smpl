@@ -1,4 +1,3 @@
-# TODO: make it in json? and read it from there
 from utils import application_path
 
 
@@ -13,30 +12,26 @@ class Spacing:
     player_buttons: int = 15
 
 class Color:
-    # background: tuple[int, int, int, float] = 37, 36, 34, 0.15
     background = (0x1b/255, 0x1d/255, 0x1e/255, 1)
-
     # now_playing_background = background
     now_playing_background = (2 * 0x1b/255, 2 * 0x1d/255, 2 * 0x1e/255, 1)
-    foreground: tuple[int, int, int, float] = 255, 140, 0, 1
+    foreground = (0xff/255, 0xbf/255, 0x00/255, 1)
     slider_track = foreground
 
 class Size:
     minimal: tuple[int, int] = 450, 700
     title_font: str = "16sp"
-    # title_size: tuple[int | None, int | None] = (300, None)
     artist_font: str = "14sp"
     queue_title_font: str = "15sp"
     queue_artist_font: str = "13sp"
     queue_duration_font: str = "15sp"
-
-    image = [1., .55]
-    title = [1., .1]
-    play_buttons = [1., .15]
+    image = [1., .72]
+    title = [1., .09]
+    play_buttons = [1., .08]
     time = [1., .05]
-    slider = [1., .03]
+    slider = [1., .02]
     top_buttons = [1., 0.05]
-    queue = [1., 0.05]
+    queue = [1., 0.03]
 
 
 class Font:
