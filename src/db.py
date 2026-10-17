@@ -4,12 +4,13 @@ from sqlite3 import connect
 
 from kivy.logger import Logger
 
-from utils import get_cache_dir, is_audio
+from utils import get_config_dir, is_audio
 from metadata import Metadata, RawMetadata
 
-db_path = Path(get_cache_dir()).joinpath("songs.db")
+db_path = Path(get_config_dir()).joinpath("songs.db")
 
 # TODO: Add album artist for album artist and artist for song artist
+# TODO: create proper db
 
 def create_db(audio_paths: list[Path|str]):
     con = connect(db_path)

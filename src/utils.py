@@ -78,9 +78,9 @@ def get_audio_provider() -> str:
 def get_cache_dir() -> Path:
     if platform == "linux":
         return Path.home().joinpath(".cache/smpl/")
-    if platform == "win32":
+    elif platform == "win32":
         return Path.home().joinpath("AppData/Local/smpl/")
-    if platform == "darwin":
+    elif platform == "darwin":
         return Path.home().joinpath("Library/Caches/smpl/")
     # if platform == "android":
     #     return Path(Path.home().joinpath(".cache/smpl"))
@@ -95,5 +95,14 @@ def clear_cache():
         Logger.info(f"{cache_dir} doens't exist")
     mkdir(cache_dir)
 
+
+def get_config_dir() -> Path:
+    if platform == "linux":
+        return Path.home().joinpath(".config/smpl/")
+    elif platform == "win32":
+        return Path.home().joinpath("AppData/Roaming/smpl/")
+    elif platform == "darwin":
+        return Path.home().joinpath(".config/smpl/")
+    raise ValueError(f"Utils: Cannot get config dir for {platform}")
 
 tracks = get_tracks()

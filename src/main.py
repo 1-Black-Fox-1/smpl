@@ -8,6 +8,7 @@ import kivy
 
 kivy.require('2.3.1')
 
+from os import makedirs
 from enum import Enum
 from json import dumps, loads
 from pathlib import Path
@@ -48,7 +49,7 @@ from db import (Album, Artist, create_db, db_exists, get_album_tracks,
 
 # if __name__ != "__main__":
 from dbus import player_interface
-from utils import application_path, get_cache_dir
+from utils import application_path, get_config_dir
 from config import Color, Font, Size
 from metadata import Metadata
 
@@ -56,18 +57,17 @@ __version__ = "1.0.0"
 
 Config.set("input", "mouse", "mouse,multitouch_on_demand")
 
-# TODO: update songs after new database is created
+
+# TODO!: if audio device is disconnected stop music
+# TODO: tap on cover to open it fullscreen
+# TODO: check out pango text provider
 # TODO: better logging
-# TODO: use outer audio engine, not kivy's?
-# TODO: sync json one time at exit with all config data
 
 # TODO: move it to utils
 def formated_time(time: int|float) -> str:
     mins = int((time / 60))
     secs = int(time - mins * 60)
     return f"{mins}:{secs:02}"
-
-# TODO: if audio device is disconnected stop music!
 
 
 class JumpRecycleBoxLayout(RecycleBoxLayout):
@@ -177,9 +177,6 @@ class JumpRecycleBoxLayout(RecycleBoxLayout):
 
 class ImageButton(ButtonBehavior, Image):
     pass
-
-
-# TODO: tap on image to open it fullscreen
 
 
 class PlayButton(Button):
@@ -595,29 +592,25 @@ class Options(Popup):
 
 
 class RepeatSpinner(Spinner):
-    repeat_variants = ListProperty(["Repeat", "No repeat", "Repeat queue"])
+    repeat_variants = ListProperty(["No repeat", "Repeat", "Repeat queue"])
 
 
 class VolumeSlider(Slider):
     def slider_move(self, touch, obj):
-        # Logger.info(f'{touch}, {obj}')
         if touch.grab_current == obj:
             app = App.get_running_app()
             app.volume = self.value
             if app.player_exists():
                 player = app.root.get_screen("player")
                 player.sound_provider.volume = self.value
-                # Logger.info(app.volume)
 
     def slider_up(self, touch, obj):
-        # Logger.info(f'{touch}, {obj}')
         if touch.grab_current == obj:
             app = App.get_running_app()
             app.volume = self.value
             if app.player_exists():
                 player = app.root.get_screen("player")
                 player.sound_provider.volume = self.value
-                # Logger.info(app.volume)
 
 
 class TitleLabel(Label):
@@ -632,7 +625,6 @@ class MusicSlider(Slider):
     value = NumericProperty()
 
     def slider_move(self, touch, obj):
-        # Logger.info(f'{touch}, {obj}')
         if touch.grab_current == obj:
             app = App.get_running_app()
             root = app.root.get_screen("player")
@@ -642,7 +634,6 @@ class MusicSlider(Slider):
             player_interface.Seeked(self.value)
 
     def slider_up(self, touch, obj):
-        # Logger.info(f'{touch}, {obj}')
         if touch.grab_current == obj:
             app = App.get_running_app()
             root = app.root.get_screen("player")
@@ -666,12 +657,7 @@ class PlayerScreen(Screen):
     queue_length = NumericProperty(None)
     now_playing_pos = NumericProperty(None)
     now_playing = ObjectProperty(None, rebind=True)
-    # sound_provider = ObjectProperty(SoundLoader.load(tracks[play_from]), rebind=True)
     sound_provider = ObjectProperty(None, rebind=True)
-    # metadt = ObjectProperty(Metadata(tracks[play_from]), rebind=True)
-    # metadts = ListProperty([Metadata(track) for track in tracks])
-    # metadt = ObjectProperty()
-    # metadts = ListProperty()
     slider_value = NumericProperty(0)
     track_pos = NumericProperty(0)
     length = NumericProperty(0)
@@ -704,6 +690,19 @@ class PlayerScreen(Screen):
         Clock.schedule_once(lambda dt:
                             self.update_lib_pos_event.cancel(),
                             update_slider_frequency)
+        Clock.schedule_once(lambda dt: self.init_repeat(), -1)
+
+    def init_repeat(self):
+        app = App.get_running_app()
+        if app.repeat_variants["repeat"] == app.repeat:
+            self.sound_provider.loop = True
+            player_interface.emit_properties_changed({"LoopStatus": "Track"})
+        if app.repeat_variants["no_repeat"] == app.repeat:
+            self.sound_provider.loop = False
+            player_interface.emit_properties_changed({"LoopStatus": "None"})
+        if app.repeat_variants["repeat_queue"] == app.repeat:
+            self.sound_provider.loop = False
+            player_interface.emit_properties_changed({"LoopStatus": "Playlist"})
 
     def pause(self):
         app = App.get_running_app()
@@ -786,7 +785,6 @@ class PlayerScreen(Screen):
 
     def on_queue(self, obj, value):
         self.queue_length = len(self.queue)
-        # Logger.info(f"length: {self.queue_length}")
 
     def on_now_playing_pos(self, obj, value):
         self.now_playing = self.queue[self.now_playing_pos]
@@ -834,7 +832,6 @@ class PlayerScreen(Screen):
         player.sound_provider.bind(on_play=lambda dt: player_interface.emit_properties_changed({"PlaybackStatus": "Playing"}))
         player.sound_provider.bind(on_stop=player.ids.play_button.background_on_pause)
         player.sound_provider.bind(on_stop=lambda dt: player_interface.emit_properties_changed({"PlaybackStatus": "Stopped"}))
-
 
         # Should be in lib player actually
         def bind_lib_player():
@@ -997,14 +994,14 @@ class CloseQueueButton(Button):
 
 class PathView(RecycleKVIDsDataViewBehavior, BoxLayout):
     def remove_path(self):
-        settings = App.get_running_app().root.get_screen("settings")
+        app = App.get_running_app()
+        settings = app.root.get_screen("settings")
         psv = settings.ids.psv
         del psv.data[psv.paths_amount - 1]
         del settings.music_paths[psv.paths_amount - 1]
         psv.paths_amount -= 1
         with open(settings.file_path, "w") as f:
-            json = dumps(settings.music_paths)
-            f.write(json)
+            f.write(app.get_settings_json())
 
 
 class PathsView(RecycleView):
@@ -1032,14 +1029,7 @@ class ScanIconButton(ButtonBehavior, Image):
 
 
 class SettingsScreen(Screen):
-    file_path = Path(get_cache_dir()).joinpath("music-paths.json")
-    try:
-        with open(file_path, "r") as f:
-            json = f.read()
-            json = loads(json)
-    except FileNotFoundError:
-        json = []
-    music_paths = ListProperty(json)
+    music_paths = ListProperty([])
 
     def update_settings_screen(self):
         self.ids.psv.paths_amount = 0
@@ -1050,7 +1040,8 @@ class SettingsScreen(Screen):
                                       "path_label.text": self.music_paths[i]})
 
     def save_music_path(self):
-        settings = App.get_running_app().root.get_screen("settings")
+        app = App.get_running_app()
+        settings = app.root.get_screen("settings")
         path = settings.ids.path_text_input.text
         if Path(path).is_dir():
             settings.ids.path_text_input.text = ""
@@ -1058,9 +1049,8 @@ class SettingsScreen(Screen):
             settings.ids.psv.data.append({"pos": settings.ids.psv.paths_amount,
                                           "path_label.text": path})
             self.music_paths.append(path)
-            with open(self.file_path, "w") as f:
-                json = dumps(self.music_paths)
-                f.write(json)
+            with open(app.settings_json, "w") as f:
+                f.write(app.get_settings_json())
         else:
             Logger.error(f"Settings: Path {path} is invalid")
 
@@ -1268,13 +1258,12 @@ class LibraryScreen(Screen):
 class SimplePlayer(App):
     volume = BoundedNumericProperty(1, min=0, max=1,
                                     errorhander=lambda x: 1 if x > 1 else 0)
-    volume_path = Path(get_cache_dir()).joinpath("volume.json")
     pause_pos = NumericProperty(0)
     # TODO: save loop status in config
     repeat = StringProperty("No repeat")
     # TODO: should be enum
-    repeat_variants = {"repeat": "Repeat",
-                       "no_repeat": "No repeat",
+    repeat_variants = {"no_repeat": "No repeat",
+                       "repeat": "Repeat",
                        "repeat_queue": "Repeat queue"}
     last_data = ListProperty()
     before_search_data = ListProperty(allownone=True)
@@ -1285,6 +1274,7 @@ class SimplePlayer(App):
     player = ObjectProperty(None)
     queue_screen = ObjectProperty(None)
     search_active = False
+    settings_json = get_config_dir().joinpath("config.json")
 
     def build(self):
         self.font = Font.main
@@ -1382,6 +1372,8 @@ class SimplePlayer(App):
             if self.repeat_variants["repeat_queue"] == self.repeat:
                 player.sound_provider.loop = False
                 player_interface.emit_properties_changed({"LoopStatus": "Playlist"})
+            Logger.info(f"App: Repeat status changed to {value}")
+            self.save_config()
 
     def update_lv(self, data: list):
         self.root.get_screen("library").ids.lv.update_lv(data)
@@ -1394,11 +1386,14 @@ class SimplePlayer(App):
         self.update_lv(self.get_data_by_filter())
 
     def on_start(self):
+        makedirs(Path(self.settings_json).parent, exist_ok=True)
         try:
-            with open(self.volume_path, "r") as f:
+            with open(self.settings_json, "r") as f:
                 json = f.read()
                 json = loads(json)
-                self.volume = json
+                self.volume = json["volume"]
+                self.root.get_screen("settings").music_paths = json["music_paths"]
+                self.repeat = json["repeat"]
         except FileNotFoundError:
             pass
         if db_exists():
@@ -1407,14 +1402,26 @@ class SimplePlayer(App):
             Clock.schedule_once(lambda dt: self.update_artists(get_all_artists()), -1)
             Clock.schedule_once(lambda dt: self.set_default_filter(), -1)
 
+    volume_event = None
+
     def on_volume(self, obj, value):
         Logger.info(f"App: Volume changed to {value}")
         player_interface.emit_properties_changed({"Volume": value})
+        if self.volume_event is not None:
+            self.volume_event.cancel()
+        self.volume_event = Clock.schedule_once(lambda dt: self.save_config(), 1)
+
+    def save_config(self):
+        with open(self.settings_json, "w") as f:
+            f.write(self.get_settings_json())
 
     def on_stop(self):
-        with open(self.volume_path, "w") as f:
-            json = dumps(self.volume)
-            f.write(json)
+        with open(self.settings_json, "w") as f:
+            f.write(self.get_settings_json())
+
+    def get_settings_json(self) -> str:
+        music_paths = self.root.get_screen("settings").music_paths
+        return dumps({"volume": self.volume, "music_paths": music_paths, "repeat": self.repeat})
 
 
 if __name__ == '__main__':
