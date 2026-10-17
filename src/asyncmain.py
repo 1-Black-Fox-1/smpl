@@ -2,9 +2,12 @@ import asyncio
 
 from kivy.logger import Logger
 
-from dbus import start_dbus
 from main import SimplePlayer
+from utils import get_dbus_support
 
+dbus_support = get_dbus_support()
+if dbus_support:
+    from dbus import start_dbus
 
 async def run_main_app(root, tasks):
     await root.async_run("asyncio")
@@ -17,7 +20,9 @@ if __name__ == '__main__':
         app = SimplePlayer()
         tasks = asyncio.ensure_future(start_dbus())
         return asyncio.gather(run_main_app(app, tasks), tasks)
-
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(root_func())
-    loop.close()
+    if dbus_support:
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(root_func())
+        loop.close()
+    else:
+        SimplePlayer().run()

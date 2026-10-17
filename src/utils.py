@@ -105,4 +105,19 @@ def get_config_dir() -> Path:
         return Path.home().joinpath(".config/smpl/")
     raise ValueError(f"Utils: Cannot get config dir for {platform}")
 
+
+def get_dbus_support() -> bool:
+    if platform == "linux":
+        dbus_support = True
+    elif platform == "win32":
+        dbus_support = False
+    elif platform == "darwin":
+        dbus_support = False
+    # elif platform == "android":
+    #     dbus_support = True
+    else:
+        dbus_support = False
+    return dbus_support
+
+
 tracks = get_tracks()

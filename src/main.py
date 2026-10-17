@@ -46,12 +46,13 @@ from kivy.core.window import Window
 from db import (Album, Artist, create_db, db_exists, get_album_tracks,
                 get_all_albums, get_all_artists, get_all_tracks,
                 get_artist_albums, remove_db)
-
-# if __name__ != "__main__":
-from dbus import player_interface
-from utils import application_path, get_config_dir
+from utils import application_path, get_config_dir, get_dbus_support
 from config import Color, Font, Size
 from metadata import Metadata
+
+dbus_support = get_dbus_support
+if dbus_support:
+    from dbus import player_interface
 
 __version__ = "1.0.0"
 
@@ -218,7 +219,8 @@ class PreviousButton(Button):
             root.sound_provider.seek(0)
             app.pause_pos = 0
             root.track_pos = 0
-            player_interface.Seeked(0)
+            if dbus_support:
+                player_interface.Seeked(0)
         else:
             root._set_now_playing_pos(root.now_playing_pos - 1)
 
@@ -238,7 +240,8 @@ class SeekForwardButton(Button):
         app.pause_pos = time_to_seek
         root.update_slider_value()
         root.update_pos()
-        player_interface.Seeked(time_to_seek)
+        if dbus_support:
+            player_interface.Seeked(time_to_seek)
 
 
 class SeekBackwardButton(Button):
@@ -250,7 +253,8 @@ class SeekBackwardButton(Button):
         app.pause_pos = time_to_seek
         root.update_slider_value()
         root.update_pos()
-        player_interface.Seeked(time_to_seek)
+        if dbus_support:
+            player_interface.Seeked(time_to_seek)
 
 
 class QueueButton(Button):
@@ -631,7 +635,8 @@ class MusicSlider(Slider):
             root.sound_provider.seek(self.value)
             root.track_pos = self.value
             app.pause_pos = self.value
-            player_interface.Seeked(self.value)
+            if dbus_support:
+                player_interface.Seeked(self.value)
 
     def slider_up(self, touch, obj):
         if touch.grab_current == obj:
@@ -640,7 +645,8 @@ class MusicSlider(Slider):
             root.sound_provider.seek(self.value)
             root.track_pos = self.value
             app.pause_pos = self.value
-            player_interface.Seeked(self.value)
+            if dbus_support:
+                player_interface.Seeked(self.value)
 
 
 class PosLabel(Label):
@@ -696,13 +702,16 @@ class PlayerScreen(Screen):
         app = App.get_running_app()
         if app.repeat_variants["repeat"] == app.repeat:
             self.sound_provider.loop = True
-            player_interface.emit_properties_changed({"LoopStatus": "Track"})
+            if dbus_support:
+                player_interface.emit_properties_changed({"LoopStatus": "Track"})
         if app.repeat_variants["no_repeat"] == app.repeat:
             self.sound_provider.loop = False
-            player_interface.emit_properties_changed({"LoopStatus": "None"})
+            if dbus_support:
+                player_interface.emit_properties_changed({"LoopStatus": "None"})
         if app.repeat_variants["repeat_queue"] == app.repeat:
             self.sound_provider.loop = False
-            player_interface.emit_properties_changed({"LoopStatus": "Playlist"})
+            if dbus_support:
+                player_interface.emit_properties_changed({"LoopStatus": "Playlist"})
 
     def pause(self):
         app = App.get_running_app()
@@ -807,7 +816,8 @@ class PlayerScreen(Screen):
         self.bind_update_pos()
         self.sound_provider.bind(on_stop=self.auto_play_next)
         self.sound_provider.volume = app.volume
-        player_interface.emit_properties_changed({"Metadata": player_interface.create_dbus_metadata(self.now_playing)})
+        if dbus_support:
+            player_interface.emit_properties_changed({"Metadata": player_interface.create_dbus_metadata(self.now_playing)})
         if prev_track_loop is not None:
             self.sound_provider.loop = prev_track_loop
         if prev_track_state == "play":
@@ -829,9 +839,10 @@ class PlayerScreen(Screen):
         player = sm.get_screen("player")
         # if player.sound_provider is not None:
         player.sound_provider.bind(on_play=player.ids.play_button.background_on_play)
-        player.sound_provider.bind(on_play=lambda dt: player_interface.emit_properties_changed({"PlaybackStatus": "Playing"}))
         player.sound_provider.bind(on_stop=player.ids.play_button.background_on_pause)
-        player.sound_provider.bind(on_stop=lambda dt: player_interface.emit_properties_changed({"PlaybackStatus": "Stopped"}))
+        if dbus_support:
+            player.sound_provider.bind(on_play=lambda dt: player_interface.emit_properties_changed({"PlaybackStatus": "Playing"}))
+            player.sound_provider.bind(on_stop=lambda dt: player_interface.emit_properties_changed({"PlaybackStatus": "Stopped"}))
 
         # Should be in lib player actually
         def bind_lib_player():
@@ -867,7 +878,8 @@ class PlayerScreen(Screen):
                 app.pause_pos = 0
                 root.track_pos = 0
                 app.player.slider_value = 0
-                player_interface.Seeked(0)
+                if dbus_support:
+                    player_interface.Seeked(0)
                 return
             Logger.info("Player: Auto play next succeded")
             root._set_now_playing_pos(root.now_playing_pos + 1)
@@ -1365,13 +1377,16 @@ class SimplePlayer(App):
             player = self.get_running_app().root.get_screen("player")
             if self.repeat_variants["repeat"] == self.repeat:
                 player.sound_provider.loop = True
-                player_interface.emit_properties_changed({"LoopStatus": "Track"})
+                if dbus_support:
+                    player_interface.emit_properties_changed({"LoopStatus": "Track"})
             if self.repeat_variants["no_repeat"] == self.repeat:
                 player.sound_provider.loop = False
-                player_interface.emit_properties_changed({"LoopStatus": "None"})
+                if dbus_support:
+                    player_interface.emit_properties_changed({"LoopStatus": "None"})
             if self.repeat_variants["repeat_queue"] == self.repeat:
                 player.sound_provider.loop = False
-                player_interface.emit_properties_changed({"LoopStatus": "Playlist"})
+                if dbus_support:
+                    player_interface.emit_properties_changed({"LoopStatus": "Playlist"})
             Logger.info(f"App: Repeat status changed to {value}")
             self.save_config()
 
@@ -1406,7 +1421,8 @@ class SimplePlayer(App):
 
     def on_volume(self, obj, value):
         Logger.info(f"App: Volume changed to {value}")
-        player_interface.emit_properties_changed({"Volume": value})
+        if dbus_support:
+            player_interface.emit_properties_changed({"Volume": value})
         if self.volume_event is not None:
             self.volume_event.cancel()
         self.volume_event = Clock.schedule_once(lambda dt: self.save_config(), 1)
@@ -1424,5 +1440,5 @@ class SimplePlayer(App):
         return dumps({"volume": self.volume, "music_paths": music_paths, "repeat": self.repeat})
 
 
-if __name__ == '__main__':
-    SimplePlayer().run()
+# if __name__ == '__main__':
+#     SimplePlayer().run()
