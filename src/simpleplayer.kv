@@ -119,7 +119,11 @@
         on_release: self.go_back()
     SearchTextInput:
         id: search_text_input
+        border: 0, 0, 0, 0
+        background_normal: ""
+        background_active: ""
         background_color: self.background_color
+        foreground_color: 255, 255, 255, 1
         disabled: self.disabled
         size_hint: 1, None
         pos_hint: {"center_y": .5}

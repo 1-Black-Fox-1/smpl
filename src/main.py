@@ -49,7 +49,7 @@ from db import (Album, Artist, create_db, db_exists, get_album_tracks,
 # if __name__ != "__main__":
 from dbus import player_interface
 from utils import application_path, get_cache_dir
-from config import Font, Size
+from config import Color, Font, Size
 from metadata import Metadata
 
 __version__ = "1.0.0"
@@ -349,7 +349,7 @@ class SearchTextInput(TextInput):
         self.text = ""
 
     def open_search(self):
-        self.background_color = (255, 255, 255, 1)
+        self.background_color = Color.background
         self.text = self.search_quote
         self.disabled = False
         self.focus = True
