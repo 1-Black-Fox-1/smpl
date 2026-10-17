@@ -372,8 +372,7 @@ class SearchTextInput(TextInput):
         app = App.get_running_app()
         if value is False:
             if self.text == "" or self.text == self.search_quote:
-                self.close_search()
-                app.hide_clear_button()
+                app.hide_search()
 
 
 class ClearButton(ImageButton):
@@ -951,6 +950,7 @@ class TrackView(RecycleKVIDsDataViewBehavior, BoxLayout, Button):
             if app.queue_screen is None:
                 Clock.schedule_once(lambda dt: create_queue_screen(), -1)
             Clock.schedule_once(lambda dt: app.player.sound_provider.play(), 1)
+            app.hide_search()
 
 
 # TODO: move tracks in qv by holding button
@@ -1245,6 +1245,7 @@ class LibraryScreen(Screen):
         self.ids.lv.view_class = "TrackView"
         self.ids.lv.update_lv(songs)
         self.last_opened_album = name
+        app.hide_search()
 
     def open_artist(self, name: str):
         app = App.get_running_app()
@@ -1253,6 +1254,7 @@ class LibraryScreen(Screen):
         self.ids.lv.view_class = "AlbumView"
         self.ids.lv.update_lv(albums)
         self.last_opened_artist = name
+        app.hide_search()
 
     # TODO: remove this, it is only being used in .kv
     def update_lv(self):
@@ -1325,19 +1327,20 @@ class SimplePlayer(App):
         search_res = [search[0] for search in search_res]
         self.update_lv(search_res)
 
-    def hide_clear_button(self):
-        library = self.root.get_screen("library")
-        library.ids.lib_top_panel.ids.clear_button.hide_button()
-
-    def clear_search(self):
+    def hide_search(self):
         library = self.root.get_screen("library")
         library.ids.lib_top_panel.ids.search_text_input.close_search()
         library.ids.lib_top_panel.ids.clear_button.hide_button()
+
+    def clear_search(self):
+        self.hide_search()
         self.update_lv(self.before_search_data)
         self.before_search_data = None
 
     def open_search(self):
         library = self.root.get_screen("library")
+        if self.search_active:
+            return
         self.before_search_data = self.last_data
         library.ids.lib_top_panel.ids.search_text_input.open_search()
         library.ids.lib_top_panel.ids.clear_button.show_button()
