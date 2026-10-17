@@ -35,5 +35,6 @@ git clone https://github.com/1-Black-Fox-1/smpl
 cd smpl
 python -m venv src/venv
 src/venv/bin/pip install -r requirements.txt
+chmod +x ./scripts/build.sh
 ./scripts/build.sh
 ```
