@@ -37,6 +37,7 @@ from kivy.uix.gridlayout import GridLayout
 from kivy.uix.recycleview import RecycleView
 from kivy.uix.screenmanager import (CardTransition, NoTransition, Screen,
                                     ScreenManager, SlideTransition)
+from kivy.uix.recycleboxlayout import RecycleBoxLayout
 from kivy.uix.recycleview.views import RecycleKVIDsDataViewBehavior
 from kivy.core.audio import SoundLoader
 from kivy.core.window import Window
@@ -69,17 +70,113 @@ def formated_time(time: int|float) -> str:
 # TODO: if audio device is disconnected stop music!
 
 
+class JumpRecycleBoxLayout(RecycleBoxLayout):
+    # https://github.com/kivy/kivy/pull/9031
+    def goto_view(self, index):
+        """Scroll the view to make the specified index visible.
+
+        Args:
+            index (int): The index in the data list to scroll to.
+        """
+        if not self.view_opts or not self.parent:
+            return
+
+        # Get the total number of items
+        num_items = len(self.view_opts)
+
+        # Limit index to valid range and handle negative indices
+        index = max(-num_items, min(index, num_items - 1))
+        if index < 0:
+            index = num_items + index
+
+        # Get padding and spacing
+        padding_left, padding_top, padding_right, padding_bottom = self.padding
+        spacing = self.spacing
+
+        # Calculate total dimensions
+        if self.orientation == "horizontal":
+            # Calculate total width including spacing and padding
+            total_width = (
+                    sum(w["size"][0] for w in self.view_opts)
+                    + (num_items - 1) * spacing
+                    + padding_left
+                    + padding_right
+            )
+
+            # Calculate position of target item
+            target_pos = padding_left + sum(
+                self.view_opts[i]["size"][0] + spacing for i in range(index)
+            )
+
+            # Calculate viewport width
+            viewport_width = self.parent.width
+
+            # Calculate scroll position (0 to 1)
+            # We want the target item to be visible in the viewport
+            # If the item is wider than the viewport, center it
+            item_width = self.view_opts[index]["size"][0]
+            if item_width > viewport_width:
+                # Center the item
+                target_scroll = max(
+                    0,
+                    min(
+                        1,
+                        (target_pos - (viewport_width - item_width) / 2)
+                        / (total_width - viewport_width),
+                    ),
+                )
+            else:
+                # Make sure the item is visible
+                target_scroll = max(
+                    0, min(1, target_pos / (total_width - viewport_width))
+                )
+
+            # Apply scroll position
+            self.parent.scroll_x = target_scroll
+        else:  # vertical orientation
+            # Calculate total height including spacing and padding
+            total_height = (
+                    sum(w["size"][1] for w in self.view_opts)
+                    + (num_items - 1) * spacing
+                    + padding_top
+                    + padding_bottom
+            )
+
+            # Calculate position of target item
+            target_pos = padding_top
+            for i in range(index):
+                target_pos += self.view_opts[i]["size"][1] + spacing
+
+            # Calculate viewport height
+            viewport_height = self.parent.height
+
+            # Calculate scroll position (0 to 1)
+            # We want the target item to be visible in the viewport
+            # If the item is taller than the viewport, center it
+            item_height = self.view_opts[index]["size"][1]
+            if item_height > viewport_height:
+                # Center the item
+                target_scroll = max(
+                    0,
+                    min(
+                        1,
+                        1
+                        - (target_pos - (viewport_height - item_height) / 2)
+                        / (total_height - viewport_height),
+                    ),
+                )
+            else:
+                # Make sure the item is visible
+                target_scroll = max(
+                    0, min(1, 1 - target_pos / (total_height - viewport_height))
+                )
+
+            # Apply scroll position
+            self.parent.scroll_y = target_scroll
+
+
 class ImageButton(ButtonBehavior, Image):
     pass
-
-
-class JumpRecycleView(RecycleView):
-    # FIXME: now jump breaks recycle view
-    def jump_to_index(self, index):
-        if index == 0 or len(self.data) == 1:
-            self.scroll_y = 1
-        else:
-            self.scroll_y = 1 - (index / (len(self.data) - 1))
 
 
 class Cover(Image):
@@ -860,7 +957,7 @@ class TrackView(RecycleKVIDsDataViewBehavior, BoxLayout, Button):
 
 
 # TODO: move tracks in qv by holding button
-class QueueView(JumpRecycleView):
+class QueueView(RecycleView):
     hl_pos = NumericProperty()
 
     def update_qv(self):
@@ -874,8 +971,7 @@ class QueueView(JumpRecycleView):
                      for i in range(player.queue_length)]
         self.data[player.now_playing_pos]["now_playing"] = True
         self.hl_pos = player.now_playing_pos
-        self.jump_to_index(player.now_playing_pos + 1)
-        # Logger.info(self.data)
+        Clock.schedule_once(lambda dt: self.layout_manager.goto_view(player.now_playing_pos), 0)
 
     def update_hl(self):
         player = App.get_running_app().root.get_screen("player")
@@ -972,7 +1068,7 @@ class SettingsScreen(Screen):
             Logger.error(f"Settings: Path {path} is invalid")
 
 
-class LibraryView(JumpRecycleView):
+class LibraryView(RecycleView):
     view_class = StringProperty("ArtistView")
     hl_pos = NumericProperty(0)
     row_ids = DictProperty()
@@ -1022,7 +1118,7 @@ class LibraryView(JumpRecycleView):
             else:
                 self.view_class = "Label"
                 self.data = [{"text": "Nothing found"}]
-        self.jump_to_index(0)
+        # Clock.schedule_once(lambda dt: self.layout_manager.goto_view(0), 0)
 
     def update_hl(self):
         player = App.get_running_app().root.get_screen("player")
