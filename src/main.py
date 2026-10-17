@@ -1278,6 +1278,7 @@ class SimplePlayer(App):
                        "no_repeat": "No repeat",
                        "repeat_queue": "Repeat queue"}
     last_data = ListProperty()
+    before_search_data = ListProperty(allownone=True)
     songs = ListProperty()
     albums = ListProperty()
     artists = ListProperty()
@@ -1337,10 +1338,12 @@ class SimplePlayer(App):
         library = self.root.get_screen("library")
         library.ids.lib_top_panel.ids.search_text_input.close_search()
         library.ids.lib_top_panel.ids.clear_button.hide_button()
-        self.update_lv(self.get_data_by_filter())
+        self.update_lv(self.before_search_data)
+        self.before_search_data = None
 
     def open_search(self):
         library = self.root.get_screen("library")
+        self.before_search_data = self.last_data
         library.ids.lib_top_panel.ids.search_text_input.open_search()
         library.ids.lib_top_panel.ids.clear_button.show_button()
 
