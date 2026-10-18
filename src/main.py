@@ -14,7 +14,6 @@ from json import dumps, loads
 from pathlib import Path
 from threading import Thread
 
-from pynput import keyboard
 from rapidfuzz import fuzz
 from kivy.app import App
 from kivy.clock import Clock
@@ -53,6 +52,9 @@ from metadata import Metadata
 dbus_support = get_dbus_support
 if dbus_support:
     from dbus import player_interface
+
+else:
+    from pynput import keyboard
 
 __version__ = "1.0.0"
 
@@ -685,9 +687,10 @@ class PlayerScreen(Screen):
                                                                  update_slider_frequency)
         self.update_slider_value_event.cancel()
 
-        self.keyboard_listener = Thread(target=self.keyboard_listener_setup,
-                                        daemon=True)
-        self.keyboard_listener.start()
+        if not dbus_support:
+            self.keyboard_listener = Thread(target=self.keyboard_listener_setup,
+                                            daemon=True)
+            self.keyboard_listener.start()
         Clock.schedule_once(lambda dt: self.update_queue_and_now_pos(queue, pos), -1)
         # Should be in lib player
         self.update_lib_pos_event = Clock.schedule_interval(lambda dt:
@@ -764,24 +767,25 @@ class PlayerScreen(Screen):
             return
         self.now_playing_pos = pos
 
-    def keyboard_listener_setup(self):
-        def on_release(key):
-            root = App.get_running_app().root.get_screen("player")
-            if key == keyboard.Key.media_play_pause:
-                Clock.schedule_once(lambda dt:
-                                    root.ids.play_button.toggle_play())
-                Logger.info(f"Keyboard: Pressed {key}")
-            elif key == keyboard.Key.media_next:
-                Clock.schedule_once(lambda dt:
-                                    root.ids.next_button.play_next())
-                Logger.info(f"Keyboard: Pressed {key}")
-            elif key == keyboard.Key.media_previous:
-                Clock.schedule_once(lambda dt:
-                                    root.ids.previous_button.play_previous())
-                Logger.info(f"Keyboard: Pressed {key}")
+    if not dbus_support:
+        def keyboard_listener_setup(self):
+            def on_release(key):
+                root = App.get_running_app().root.get_screen("player")
+                if key == keyboard.Key.media_play_pause:
+                    Clock.schedule_once(lambda dt:
+                                        root.ids.play_button.toggle_play())
+                    Logger.info(f"Keyboard: Pressed {key}")
+                elif key == keyboard.Key.media_next:
+                    Clock.schedule_once(lambda dt:
+                                        root.ids.next_button.play_next())
+                    Logger.info(f"Keyboard: Pressed {key}")
+                elif key == keyboard.Key.media_previous:
+                    Clock.schedule_once(lambda dt:
+                                        root.ids.previous_button.play_previous())
+                    Logger.info(f"Keyboard: Pressed {key}")
 
-        with keyboard.Listener(on_release=on_release) as listener:
-            listener.join()
+            with keyboard.Listener(on_release=on_release) as listener:
+                listener.join()
 
     def set_length(self):
         self.length = self.sound_provider.length
