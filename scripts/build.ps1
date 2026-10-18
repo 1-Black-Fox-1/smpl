@@ -8,6 +8,7 @@ $SrcDir   = Join-Path $ScriptDir "..\src"
 $BinDir   = Join-Path $ScriptDir "..\bin"
 $BuildDir = Join-Path $ScriptDir "..\build"
 $SpecFile = Join-Path $ScriptDir "smpl.spec"
+$MainFile = Join-Path $SrcDir    "asyncmain.py"
 
 $VenvWasActivated = $false
 
@@ -23,7 +24,7 @@ if ([string]::IsNullOrEmpty($env:VIRTUAL_ENV)) {
 }
 
 $PyiMakespecArgs = @(
-    (Join-Path $SrcDir "main.py")
+    $MainFile
     "--specpath", $ScriptDir
     "--name", "smpl"
     "--add-data", "$(Join-Path $SrcDir 'resources\fonts');resources/fonts"

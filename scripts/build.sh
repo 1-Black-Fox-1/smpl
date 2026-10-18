@@ -24,7 +24,6 @@ print_help () {
     echo " "
     echo "options:"
     echo "-h, --help                show help"
-    echo "--no-async                build with no async support. Effects mpris"
     echo "--no-clean                don't clear build files"
 }
 
@@ -33,10 +32,6 @@ while [ $# -gt 0 ]; do
         -h|--help)
             print_help
             exit 0
-            ;;
-        --no-async)
-            ASYNC=false
-            shift
             ;;
         --no-clean)
             CLEAN=false
@@ -51,11 +46,7 @@ while [ $# -gt 0 ]; do
     esac
 done
 
-if $ASYNC; then
-    MAIN="${SCRIPT_DIR}/../src/asyncmain.py"
-else
-    MAIN="${SCRIPT_DIR}/../src/main.py"
-fi
+MAIN="${SCRIPT_DIR}/../src/asyncmain.py"
 
 pyinstaller  ${MAIN} \
     --distpath "${SCRIPT_DIR}/../bin" \
