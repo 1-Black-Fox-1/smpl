@@ -55,12 +55,15 @@ win_media_support = get_win_media_support()
 if dbus_support:
     from dbus import player_interface
 elif win_media_support:
-    from winrt.system import Object
     from winmedia import controls, on_media_opened
     from winrt.windows.media import MediaPlaybackStatus
 else:
     from threading import Thread
     from pynput import keyboard
+
+if platform == "win32":
+    from winrt.windows.storage.pickers import FolderPicker, PickerLocationId
+    from winrt.runtime.interop import initialize_with_window
 
 __version__ = "1.0.0"
 
@@ -1471,8 +1474,6 @@ class SimplePlayer(App):
 
     async def start_file_picker(self) -> Path|None:
         if platform == "win32":
-            from winrt.windows.storage.pickers import FolderPicker, PickerLocationId
-            from winrt.runtime.interop import initialize_with_window
             folder_picker = FolderPicker()
             folder_picker.suggested_start_location = PickerLocationId.COMPUTER_FOLDER
             folder_picker.file_type_filter.append("*")
