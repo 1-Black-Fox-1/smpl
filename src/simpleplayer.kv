@@ -89,7 +89,7 @@
 
         SettingsTopPanel:
 
-        GridLayout:
+        BoxLayout:
             size_hint: 1, None
             height: self.minimum_height
             cols: 2
@@ -105,16 +105,32 @@
                 multiline: False
                 font_size: 15
                 font_name: app.font
-                on_text_validate: root.save_music_path()
+                on_text_validate: root.save_music_path_from_text_input()
                 cursor_blink: False
             Button:
                 height: 30
                 size_hint_y: None
                 size_hint_x: .2
                 text: "Save"
-                on_release: root.save_music_path()
+                on_release: root.save_music_path_from_text_input()
                 # border: (0, 0, 0, 0)
                 background_color: 0, 0, 0, 0
+                font_name: app.font
+                pos_hint: {"center_y": .5}
+        Button:
+            height: 30
+            size_hint_y: None
+            # size_hint_x: .2
+            text: "Choose path via file picker"
+            on_release: app.run_save_path()
+            background_color: 0, 0, 0, 0
+            font_name: app.font
+            canvas.before:
+                Color:
+                    rgba: Color.background[0] / 1.5, Color.background[1] / 1.5, Color.background[2] / 1.5, 1
+                Line:
+                    width: 1.5
+                    rectangle: self.x, self.y, self.width, self.height
         PathsView:
             id: psv
         ScanIconButton:

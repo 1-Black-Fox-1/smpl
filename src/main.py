@@ -41,6 +41,7 @@ from kivy.uix.recycleboxlayout import RecycleBoxLayout
 from kivy.uix.recycleview.views import RecycleKVIDsDataViewBehavior
 from kivy.core.audio import SoundLoader
 from kivy.core.window import Window
+from sys import platform
 
 from db import (Album, Artist, create_db, db_exists, get_album_tracks,
                 get_all_albums, get_all_artists, get_all_tracks,
@@ -1028,8 +1029,7 @@ class PathView(RecycleKVIDsDataViewBehavior, BoxLayout):
         del psv.data[psv.paths_amount - 1]
         del settings.music_paths[psv.paths_amount - 1]
         psv.paths_amount -= 1
-        with open(settings.file_path, "w") as f:
-            f.write(app.get_settings_json())
+        app.save_config()
 
 
 class PathsView(RecycleView):
@@ -1067,12 +1067,26 @@ class SettingsScreen(Screen):
             self.ids.psv.data.append({"pos": self.ids.psv.paths_amount,
                                       "path_label.text": self.music_paths[i]})
 
-    def save_music_path(self):
+    def save_music_path_from_text_input(self):
         app = App.get_running_app()
         settings = app.root.get_screen("settings")
         path = settings.ids.path_text_input.text
         if Path(path).is_dir():
             settings.ids.path_text_input.text = ""
+            settings.ids.psv.paths_amount += 1
+            settings.ids.psv.data.append({"pos": settings.ids.psv.paths_amount,
+                                          "path_label.text": path})
+            self.music_paths.append(path)
+            with open(app.settings_json, "w") as f:
+                f.write(app.get_settings_json())
+        else:
+            Logger.error(f"Settings: Path {path} is invalid")
+
+    def save_music_path(self, path: Path):
+        app = App.get_running_app()
+        settings = app.root.get_screen("settings")
+        if path.is_dir():
+            path = str(path)
             settings.ids.psv.paths_amount += 1
             settings.ids.psv.data.append({"pos": settings.ids.psv.paths_amount,
                                           "path_label.text": path})
@@ -1443,11 +1457,11 @@ class SimplePlayer(App):
             self.volume_event.cancel()
         self.volume_event = Clock.schedule_once(lambda dt: self.save_config(), 1)
 
-    def save_config(self):
+    def on_stop(self):
         with open(self.settings_json, "w") as f:
             f.write(self.get_settings_json())
 
-    def on_stop(self):
+    def save_config(self):
         with open(self.settings_json, "w") as f:
             f.write(self.get_settings_json())
 
@@ -1455,6 +1469,30 @@ class SimplePlayer(App):
         music_paths = self.root.get_screen("settings").music_paths
         return dumps({"volume": self.volume, "music_paths": music_paths, "repeat": self.repeat})
 
+    async def start_file_picker(self) -> Path|None:
+        if platform == "win32":
+            from winrt.windows.storage.pickers import FolderPicker, PickerLocationId
+            from winrt.runtime.interop import initialize_with_window
+            folder_picker = FolderPicker()
+            folder_picker.suggested_start_location = PickerLocationId.COMPUTER_FOLDER
+            folder_picker.file_type_filter.append("*")
+            initialize_with_window(folder_picker, Window.get_window_info().window)
+            folder = await folder_picker.pick_single_folder_async()
+            if folder is not None:
+                return Path(folder.path)
+        return None
+    
+    async def save_path(self):
+        path = await self.start_file_picker()
+        app = App.get_running_app()
+        settings = app.root.get_screen("settings")
+        if path is not None:
+            settings.save_music_path(path)
+            Logger.info(f"App: Path saved {path}")
+        Logger.info(f"App: User closed file picker")
+
+    def run_save_path(self):
+        asyncio.create_task(self.save_path())
 
 # if __name__ == '__main__':
 #     SimplePlayer().run()
