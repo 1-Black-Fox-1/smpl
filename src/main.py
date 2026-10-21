@@ -8,11 +8,11 @@ import kivy
 
 kivy.require('2.3.1')
 
+import asyncio
 from os import makedirs
 from enum import Enum
 from json import dumps, loads
 from pathlib import Path
-from threading import Thread
 
 from rapidfuzz import fuzz
 from kivy.app import App
@@ -45,15 +45,20 @@ from kivy.core.window import Window
 from db import (Album, Artist, create_db, db_exists, get_album_tracks,
                 get_all_albums, get_all_artists, get_all_tracks,
                 get_artist_albums, remove_db)
-from utils import application_path, get_config_dir, get_dbus_support
+from utils import application_path, get_config_dir, get_dbus_support, get_win_media_support
 from config import Color, Font, Size
 from metadata import Metadata
 
-dbus_support = get_dbus_support
+dbus_support = get_dbus_support()
+win_media_support = get_win_media_support()
 if dbus_support:
     from dbus import player_interface
-
+elif win_media_support:
+    from winrt.system import Object
+    from winmedia import controls, on_media_opened
+    from winrt.windows.media import MediaPlaybackStatus
 else:
+    from threading import Thread
     from pynput import keyboard
 
 __version__ = "1.0.0"
@@ -205,7 +210,7 @@ class PlayButton(Button):
             Logger.info("Player: Stop playing")
 
     def background_on_play(self, obj):
-        self.background_down = f"{application_path}/resources/images/play_circle.png"
+        self.background_down = f"{application_path}/resources/images/pause_circle.png"
         self.background_normal = f"{application_path}/resources/images/pause_circle.png"
 
     def background_on_pause(self, obj):
@@ -687,7 +692,7 @@ class PlayerScreen(Screen):
                                                                  update_slider_frequency)
         self.update_slider_value_event.cancel()
 
-        if not dbus_support:
+        if not dbus_support and not win_media_support:
             self.keyboard_listener = Thread(target=self.keyboard_listener_setup,
                                             daemon=True)
             self.keyboard_listener.start()
@@ -767,7 +772,7 @@ class PlayerScreen(Screen):
             return
         self.now_playing_pos = pos
 
-    if not dbus_support:
+    if not dbus_support and not win_media_support:
         def keyboard_listener_setup(self):
             def on_release(key):
                 root = App.get_running_app().root.get_screen("player")
@@ -812,7 +817,7 @@ class PlayerScreen(Screen):
             prev_track_loop = None
         app = App.get_running_app()
         app.pause_pos = 0
-        Logger.info(f"Player: Before loading new song {self.now_playing.file}")
+        # Logger.info(f"Player: Before loading new song {self.now_playing.file}")
         self.sound_provider = SoundLoader.load(self.now_playing.file)
         Logger.info(f"Player: New song {self.now_playing.title}")
         self.set_length()
@@ -822,6 +827,8 @@ class PlayerScreen(Screen):
         self.sound_provider.volume = app.volume
         if dbus_support:
             player_interface.emit_properties_changed({"Metadata": player_interface.create_dbus_metadata(self.now_playing)})
+        if win_media_support:
+            asyncio.create_task(on_media_opened(self, None))
         if prev_track_loop is not None:
             self.sound_provider.loop = prev_track_loop
         if prev_track_state == "play":
@@ -847,6 +854,11 @@ class PlayerScreen(Screen):
         if dbus_support:
             player.sound_provider.bind(on_play=lambda dt: player_interface.emit_properties_changed({"PlaybackStatus": "Playing"}))
             player.sound_provider.bind(on_stop=lambda dt: player_interface.emit_properties_changed({"PlaybackStatus": "Stopped"}))
+        if win_media_support:
+            def change_current_state(state: MediaPlaybackStatus):
+                controls.playback_status = state
+            player.sound_provider.bind(on_play=lambda dt: change_current_state(MediaPlaybackStatus.PLAYING))
+            player.sound_provider.bind(on_stop=lambda dt: change_current_state(MediaPlaybackStatus.PAUSED))
 
         # Should be in lib player actually
         def bind_lib_player():
@@ -890,19 +902,19 @@ class PlayerScreen(Screen):
             Clock.schedule_once(lambda dt: root.sound_provider.play(), 0)
 
     def bind_update_pos(self):
-        Logger.info("Player: Staring binding events")
+        Logger.info("Player: Starting binding events")
         # if self.sound_provider is not None:
         self.sound_provider.bind(on_play=self.start_time_events)
         self.sound_provider.bind(on_stop=self.stop_time_events)
 
     def stop_time_events(self, obj):
-        Logger.info("Player: Stop_events")
+        Logger.info("Player: Stop events")
         self.update_slider_value_event.cancel()
         self.update_pos_event.cancel()
         self.update_lib_pos_event.cancel()
 
     def start_time_events(self, obj):
-        Logger.info("Player: Start_events")
+        Logger.info("Player: Start events")
         self.update_slider_value_event()
         self.update_pos_event()
         self.update_lib_pos_event()

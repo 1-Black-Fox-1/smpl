@@ -120,4 +120,12 @@ def get_dbus_support() -> bool:
     return dbus_support
 
 
+def get_win_media_support() -> bool:
+    if platform == "win32":
+        win_media_support = True
+    else:
+        win_media_support = False
+    return win_media_support
+
+
 tracks = get_tracks()
