@@ -1,12 +1,15 @@
 from kivy.app import App
-from kivy.logger import Logger
 from kivy.clock import Clock
+from kivy.logger import Logger
 from kivy.core.window import Window
-from winrt.windows.media import SystemMediaTransportControls, SystemMediaTransportControlsButtonPressedEventArgs, SystemMediaTransportControlsButton, MediaPlaybackType
-from winrt.windows.media.interop import get_for_window
-from winrt.windows.storage import StorageFile
-from winrt.windows.storage.streams import RandomAccessStreamReference
 
+from winrt.windows.media import (MediaPlaybackType,
+                                 SystemMediaTransportControls,
+                                 SystemMediaTransportControlsButton,
+                                 SystemMediaTransportControlsButtonPressedEventArgs)
+from winrt.windows.storage import StorageFile
+from winrt.windows.media.interop import get_for_window
+from winrt.windows.storage.streams import RandomAccessStreamReference
 
 hwnd = Window.get_window_info().window
 controls = get_for_window(hwnd)
@@ -50,7 +53,7 @@ async def on_media_opened(sender, args):
     image = await StorageFile.get_file_from_path_async(image)
     updater.thumbnail = RandomAccessStreamReference.create_from_file(image)
     updater.update()
-    Logger.info(f"Windows Media: New media updated")
+    Logger.info("Windows Media: New media updated")
     enable_controls()
 
 
@@ -73,4 +76,4 @@ def enable_controls():
 async def start_win_media():
     disable_controls()
     controls.add_button_pressed(on_media_button_pressed)
-    Logger.info(f"Windows Media: Started")
+    Logger.info("Windows Media: Started")

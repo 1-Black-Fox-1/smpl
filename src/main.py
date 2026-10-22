@@ -8,10 +8,11 @@ import kivy
 
 kivy.require('2.3.1')
 
-import asyncio
 from os import makedirs
+from sys import platform
 from enum import Enum
 from json import dumps, loads
+from asyncio import create_task
 from pathlib import Path
 
 from rapidfuzz import fuzz
@@ -41,12 +42,12 @@ from kivy.uix.recycleboxlayout import RecycleBoxLayout
 from kivy.uix.recycleview.views import RecycleKVIDsDataViewBehavior
 from kivy.core.audio import SoundLoader
 from kivy.core.window import Window
-from sys import platform
 
 from db import (Album, Artist, create_db, db_exists, get_album_tracks,
                 get_all_albums, get_all_artists, get_all_tracks,
                 get_artist_albums, remove_db)
-from utils import application_path, get_config_dir, get_dbus_support, get_win_media_support
+from utils import (application_path, get_config_dir, get_dbus_support,
+                   get_win_media_support)
 from config import Color, Font, Size
 from metadata import Metadata
 
@@ -54,16 +55,19 @@ dbus_support = get_dbus_support()
 win_media_support = get_win_media_support()
 if dbus_support:
     from dbus import player_interface
+
 elif win_media_support:
     from winmedia import controls, on_media_opened
     from winrt.windows.media import MediaPlaybackStatus
+
 else:
     from threading import Thread
+
     from pynput import keyboard
 
 if platform == "win32":
-    from winrt.windows.storage.pickers import FolderPicker, PickerLocationId
     from winrt.runtime.interop import initialize_with_window
+    from winrt.windows.storage.pickers import FolderPicker, PickerLocationId
 
 __version__ = "1.0.0"
 
@@ -832,7 +836,7 @@ class PlayerScreen(Screen):
         if dbus_support:
             player_interface.emit_properties_changed({"Metadata": player_interface.create_dbus_metadata(self.now_playing)})
         if win_media_support:
-            asyncio.create_task(on_media_opened(self, None))
+            create_task(on_media_opened(self, None))
         if prev_track_loop is not None:
             self.sound_provider.loop = prev_track_loop
         if prev_track_state == "play":
@@ -1482,7 +1486,7 @@ class SimplePlayer(App):
             if folder is not None:
                 return Path(folder.path)
         return None
-    
+
     async def save_path(self):
         path = await self.start_file_picker()
         app = App.get_running_app()
@@ -1490,10 +1494,10 @@ class SimplePlayer(App):
         if path is not None:
             settings.save_music_path(path)
             Logger.info(f"App: Path saved {path}")
-        Logger.info(f"App: User closed file picker")
+        Logger.info("App: User closed file picker")
 
     def run_save_path(self):
-        asyncio.create_task(self.save_path())
+        create_task(self.save_path())
 
 # if __name__ == '__main__':
 #     SimplePlayer().run()
