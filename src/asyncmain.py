@@ -16,7 +16,7 @@ if win_media_support:
 
 async def run_main_app(root, tasks):
     await root.async_run("asyncio")
-    Logger.info("App finished")
+    Logger.info("App: App finished")
     tasks.cancel()
 
 

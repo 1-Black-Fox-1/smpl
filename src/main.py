@@ -12,8 +12,10 @@ from os import makedirs
 from sys import platform
 from enum import Enum
 from json import dumps, loads
+from shutil import which
 from asyncio import create_task
 from pathlib import Path
+from subprocess import run as subrun
 
 from rapidfuzz import fuzz
 from kivy.app import App
@@ -1476,7 +1478,7 @@ class SimplePlayer(App):
         music_paths = self.root.get_screen("settings").music_paths
         return dumps({"volume": self.volume, "music_paths": music_paths, "repeat": self.repeat})
 
-    async def start_file_picker(self) -> Path|None:
+    async def get_folder_from_file_picker(self) -> Path|None:
         if platform == "win32":
             folder_picker = FolderPicker()
             folder_picker.suggested_start_location = PickerLocationId.COMPUTER_FOLDER
@@ -1485,16 +1487,46 @@ class SimplePlayer(App):
             folder = await folder_picker.pick_single_folder_async()
             if folder is not None:
                 return Path(folder.path)
-        return None
+            else:
+                Logger.info("App: User closed file picker")
+                return None
+        elif platform == "linux":
+            if which("zenity") is not None:
+                cmd = ["zenity",
+                       "--file-selection",
+                       "--directory",
+                       f"--filename={Path.home()}/Music/"]
+                folder = subrun(cmd, capture_output=True, text=True)
+                folder = folder.stdout.strip()
+                if folder != "":
+                    return Path(folder)
+                else:
+                    Logger.info("App: User closed file picker")
+                    return None
+            elif which("kdialog") is not None:
+                cmd = ["kdialog",
+                       "--getexistingdirectory",
+                       f"{Path.home()}/Music/"]
+                folder = subrun(cmd, capture_output=True, text=True)
+                folder = folder.stdout.strip()
+                if folder != "":
+                    return Path(folder)
+                else:
+                    Logger.info("App: User closed file picker")
+                    return None
+            else:
+                Logger.error("App: Could not open file picker." +
+                             + "User didn't have supported file picker")
+                return None
+        else:
+            Logger.info(f"App: File picker for {platform} is not supported")
 
     async def save_path(self):
-        path = await self.start_file_picker()
-        app = App.get_running_app()
-        settings = app.root.get_screen("settings")
+        path = await self.get_folder_from_file_picker()
+        settings = self.root.get_screen("settings")
         if path is not None:
             settings.save_music_path(path)
             Logger.info(f"App: Path saved {path}")
-        Logger.info("App: User closed file picker")
 
     def run_save_path(self):
         create_task(self.save_path())
