@@ -15,6 +15,7 @@ cache_dir = get_cache_dir()
 # TODO check none for tags before saving image to cache
 # TODO RawMetadata can generate None.jpg
 # TODO Check for multiple artists
+# TODO Take only year to date if date is y-m-d
 
 
 class RawMetadata:

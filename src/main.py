@@ -26,12 +26,15 @@ from kivy.factory import Factory
 from kivy.properties import (BooleanProperty, BoundedNumericProperty,
                              ColorProperty, DictProperty, ListProperty,
                              NumericProperty, ObjectProperty, StringProperty)
+from kivy.core.text import LabelBase
+from kivy.core.audio import SoundLoader
+from kivy.core.window import Window
 from kivy.uix.image import Image
 from kivy.uix.label import Label
 from kivy.uix.popup import Popup
 from kivy.uix.button import Button
 from kivy.uix.slider import Slider
-from kivy.uix.spinner import Spinner
+from kivy.uix.spinner import Spinner, SpinnerOption
 from kivy.uix.behaviors import ButtonBehavior
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.modalview import ModalView
@@ -42,15 +45,13 @@ from kivy.uix.screenmanager import (CardTransition, NoTransition, Screen,
                                     ScreenManager, SlideTransition)
 from kivy.uix.recycleboxlayout import RecycleBoxLayout
 from kivy.uix.recycleview.views import RecycleKVIDsDataViewBehavior
-from kivy.core.audio import SoundLoader
-from kivy.core.window import Window
 
 from db import (Album, Artist, create_db, db_exists, get_album_tracks,
                 get_all_albums, get_all_artists, get_all_tracks,
                 get_artist_albums, remove_db)
 from utils import (application_path, get_config_dir, get_dbus_support,
                    get_win_media_support)
-from config import Color, Font, Size
+from config import Color, Size
 from metadata import Metadata
 
 dbus_support = get_dbus_support()
@@ -75,7 +76,8 @@ __version__ = "1.0.0"
 
 Config.set("input", "mouse", "mouse,multitouch_on_demand")
 
-
+# FIXME: go/scroll to 0 item when open album/artist
+# FIXME: Jumping search on low size screen
 # TODO!: if audio device is disconnected stop music
 # TODO: tap on cover to open it fullscreen
 # TODO: check out pango text provider
@@ -349,7 +351,7 @@ class ExitDialog(ModalView):
 
 class SearchTextInput(TextInput):
     disabled = BooleanProperty(True)
-    background_color = ColorProperty((0, 0, 0, 0))
+    background_color = ColorProperty()
     search_quote = "What would like to listen?"
     quote_exists = False
     should_search = False
@@ -361,18 +363,18 @@ class SearchTextInput(TextInput):
         self.quote_exists = False
         self.should_search = False
         self.disabled = True
-        self.background_color = (0, 0, 0, 0)
+        self.background_color = app.theme.transparent
         self.text = ""
 
     def open_search(self):
-        self.background_color = Color.background
+        app = App.get_running_app()
+        self.background_color = app.theme.background
         self.text = self.search_quote
         self.disabled = False
         self.focus = True
         self.cursor = (0, 0)
         self.quote_exists = True
         self.should_search = False
-        app = App.get_running_app()
         app.search_active = True
 
     def on_text(self, obj, value):
@@ -394,13 +396,15 @@ class SearchTextInput(TextInput):
 
 
 class ClearButton(ImageButton):
-    color = ColorProperty((0, 0, 0, 0))
+    color = ColorProperty()
 
     def hide_button(self):
-        self.color = (0, 0, 0, 0)
+        app = App.get_running_app()
+        self.color = app.theme.transparent
 
     def show_button(self):
-        self.color = (255, 255, 255, 1)
+        app = App.get_running_app()
+        self.color = app.theme.icon
 
 
 class AddToQueueButton(Button):
@@ -603,17 +607,13 @@ class TrackOptions(ModalView):
         self.dismiss()
 
 
-class OptionsButton(Button):
+class OptionsButton(ImageButton):
     pass
 
 
 # TODO: shuffle
 class Options(Popup):
     pass
-
-
-class RepeatSpinner(Spinner):
-    repeat_variants = ListProperty(["No repeat", "Repeat", "Repeat queue"])
 
 
 class VolumeSlider(Slider):
@@ -1306,6 +1306,22 @@ class LibraryScreen(Screen):
         self.ids.lv.update_hl()
 
 
+class ThemeSpinnerOption(SpinnerOption):
+    pass
+
+
+class SpinnerWithThemeOption(Spinner):
+    option_cls = ThemeSpinnerOption
+
+
+class ThemeSpinner(SpinnerWithThemeOption):
+    pass
+
+
+class RepeatSpinner(SpinnerWithThemeOption):
+    repeat_variants = ListProperty(["No repeat", "Repeat", "Repeat queue"])
+
+
 class SimplePlayer(App):
     volume = BoundedNumericProperty(1, min=0, max=1,
                                     errorhander=lambda x: 1 if x > 1 else 0)
@@ -1326,9 +1342,14 @@ class SimplePlayer(App):
     queue_screen = ObjectProperty(None)
     search_active = False
     settings_json = get_config_dir().joinpath("config.json")
+    theme = ObjectProperty(Color(), rebind=True)
+    available_themes = ListProperty(["VLC", "Lilac AMOLED"])
 
     def build(self):
-        self.font = Font.main
+        self.font = "NotoSansJP"
+        LabelBase.register(name=self.font,
+                          fn_regular=f"{application_path}/resources/fonts/Noto_Sans,Noto_Sans_JP/Noto_Sans_JP/static/NotoSansJP-Regular.ttf",
+                          fn_bold=f"{application_path}/resources/fonts/Noto_Sans,Noto_Sans_JP/Noto_Sans_JP/static/NotoSansJP-Bold.ttf")
         Window.size = Size.minimal
         self.title = "Simple Player"
         self.icon = f"{application_path}/resources/images/simple-player.png"
@@ -1341,7 +1362,10 @@ class SimplePlayer(App):
         # sm.add_widget(QueueScreen(name="queue"))
         return sm
 
-    def search(self, text):
+    def change_theme(self, name: str):
+        self.theme = Color(name)
+
+    def search(self, text: str):
         search_res = []
         search_ratio = 60
         assert (self.before_search_data is not None)
@@ -1445,9 +1469,22 @@ class SimplePlayer(App):
             with open(self.settings_json, "r") as f:
                 json = f.read()
                 json = loads(json)
-                self.volume = json["volume"]
-                self.root.get_screen("settings").music_paths = json["music_paths"]
-                self.repeat = json["repeat"]
+                try:
+                    self.volume = json["volume"]
+                except KeyError:
+                    self.volume = 0.5
+                try:
+                    self.root.get_screen("settings").music_paths = json["music_paths"]
+                except KeyError:
+                    self.music_paths = []
+                try:
+                    self.repeat = json["repeat"]
+                except KeyError:
+                    self.repeat = self.repeat_variants["no_repeat"]
+                try:
+                    self.theme = Color(json["theme"])
+                except KeyError:
+                    self.theme = Color()
         except FileNotFoundError:
             pass
         if db_exists():
@@ -1476,7 +1513,10 @@ class SimplePlayer(App):
 
     def get_settings_json(self) -> str:
         music_paths = self.root.get_screen("settings").music_paths
-        return dumps({"volume": self.volume, "music_paths": music_paths, "repeat": self.repeat})
+        return dumps({"volume": self.volume,
+                      "repeat": self.repeat,
+                      "music_paths": music_paths,
+                      "theme": self.theme.name})
 
     async def get_folder_from_file_picker(self) -> Path|None:
         if platform == "win32":

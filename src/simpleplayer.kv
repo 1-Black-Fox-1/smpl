@@ -4,7 +4,6 @@
 #:import Factory kivy.factory.Factory
 #:import ScrollEffect kivy.effects.scroll.ScrollEffect
 
-#:import Color config.Color
 #:import Padding config.Padding
 #:import Size config.Size
 #:import Spacing config.Spacing
@@ -13,34 +12,40 @@
 
 <TopPanel@BoxLayout>:
     size_hint: Size.top_buttons
-    orientation: 'horizontal'
+    orientation: "horizontal"
     BackButton:
         size_hint: None, 1
         size: 25, 25
-        border: (0, 0, 0, 0)
-        source: f'{application_path}/resources/images/arrow_back.png'
+        source: f"{application_path}/resources/images/arrow_back.png"
         on_release: self.go_back()
+        background_normal: ""
+        background_color: app.theme.transparent
+        color: app.theme.icon
     Widget:
     OptionsButton:
         size_hint: None, 1
         size: 25, 25
-        border: (0, 0, 0, 0)
-        background_down: f'{application_path}/resources/images/more_vert.png'
-        background_normal: f'{application_path}/resources/images/more_vert.png'
+        source: f"{application_path}/resources/images/more_vert.png"
         on_release: Factory.Options().open()
+        background_normal: ""
+        background_color: app.theme.transparent
+        color: app.theme.icon
 
 <PathView>:
     pos:
     Label:
         id: path_label
         font_name: app.font
+        color: app.theme.text
     Button:
         id: remove_path
         size_hint: .2, 1
         text: "Remove"
+        font_name: app.font
+        color: app.theme.button_text
         on_release: root.remove_path()
-        # border: (0, 0, 0, 0)
-        background_color: 0, 0, 0, 0
+        background_normal: ""
+        background_color: app.theme.transparent
 
 <PathsView>:
     paths_amount:
@@ -62,23 +67,32 @@
     BackButton:
         size_hint: None, 1
         size: 25, 25
-        border: (0, 0, 0, 0)
         source: f"{application_path}/resources/images/arrow_back.png"
         on_release: self.go_back()
+        background_normal: ""
+        background_color: app.theme.transparent
+        color: app.theme.icon
     Widget:
     SettingsButton:
         size_hint: None, 1
         size: 25, 25
-        border: (0, 0, 0, 0)
         source: f"{application_path}/resources/images/settings.png"
         on_release: self.open_settings()
+        background_normal: ""
+        background_color: app.theme.transparent
+        color: app.theme.icon
+
+<ThemeSpinnerOption>:
+    color: app.theme.button_text
+    background_color: app.theme.background_secondary
+    font_name: app.font
 
 <SettingsScreen>:
     on_pre_enter: self.update_settings_screen()
     Widget:
         canvas.before:
             Color:
-                rgba: Color.background
+                rgba: app.theme.background
             Rectangle:
                 size: root.size
     BoxLayout:
@@ -89,6 +103,38 @@
 
         SettingsTopPanel:
 
+        Label:
+            canvas.before:
+                Color:
+                    rgba: app.theme.border
+                Line:
+                    points: self.x, self.y + self.size[1], self.x + self.size[0], self.y + self.size[1]
+            text: "Theme"
+            size_hint_y: None
+            height: 30
+            font_name: app.font
+            color: app.theme.text
+        ThemeSpinner:
+            size_hint_y: None
+            height: 30
+            text: app.theme.name
+            font_name: app.font
+            values: app.available_themes
+            on_text: app.change_theme(self.text)
+            background_color: app.theme.transparent
+            color: app.theme.button_text
+
+        Label:
+            canvas.before:
+                Color:
+                    rgba: app.theme.border
+                Line:
+                    points: self.x, self.y + self.size[1], self.x + self.size[0], self.y + self.size[1]
+            text: "Music paths"
+            size_hint_y: None
+            height: 30
+            font_name: app.font
+            color: app.theme.text
         BoxLayout:
             size_hint: 1, None
             height: self.minimum_height
@@ -99,38 +145,37 @@
                 height: 40
                 background_normal: ""
                 background_active: ""
-                background_color: Color.background[0]/1.5, Color.background[1]/1.5, Color.background[2]/1.5
-                foreground_color: 1, 1, 1, 1
+                background_color: app.theme.background
+                foreground_color: app.theme.text
                 size_hint_y: None
                 multiline: False
                 font_size: 15
                 font_name: app.font
                 on_text_validate: root.save_music_path_from_text_input()
                 cursor_blink: False
+                cursor_color: app.theme.secondary
+                foreground_color: app.theme.text
             Button:
                 height: 30
                 size_hint_y: None
                 size_hint_x: .2
                 text: "Save"
                 on_release: root.save_music_path_from_text_input()
-                # border: (0, 0, 0, 0)
-                background_color: 0, 0, 0, 0
+                color: app.theme.button_text
                 font_name: app.font
                 pos_hint: {"center_y": .5}
+                background_normal: ""
+                background_color: app.theme.transparent
         Button:
             height: 30
             size_hint_y: None
             # size_hint_x: .2
             text: "Choose path via file picker"
+            color: app.theme.button_text
             on_release: app.run_save_path()
-            background_color: 0, 0, 0, 0
+            background_color: app.theme.transparent
+            background_normal: ""
             font_name: app.font
-            canvas.before:
-                Color:
-                    rgba: Color.background[0] / 1.5, Color.background[1] / 1.5, Color.background[2] / 1.5, 1
-                Line:
-                    width: 1.5
-                    rectangle: self.x, self.y, self.width, self.height
         PathsView:
             id: psv
         ScanIconButton:
@@ -140,6 +185,9 @@
             size_hint_x: 0.2
             fit_mode: "contain"
             on_release: self.scan()
+            background_color: app.theme.transparent
+            background_normal: ""
+            color: app.theme.icon
 
 <LibraryTopPanel@BoxLayout>:
     size_hint: Size.top_buttons
@@ -147,16 +195,17 @@
     BackButton:
         size_hint: None, 1
         size: 25, 25
-        border: (0, 0, 0, 0)
         source: f"{application_path}/resources/images/arrow_back.png"
         on_release: self.go_back()
+        background_color: app.theme.transparent
+        background_normal: ""
+        color: app.theme.icon
     SearchTextInput:
         id: search_text_input
-        border: 0, 0, 0, 0
         background_normal: ""
         background_active: ""
-        background_color: self.background_color
-        foreground_color: 255, 255, 255, 1
+        background_color: app.theme.transparent
+        foreground_color: 1, 1, 1, 1
         disabled: self.disabled
         size_hint: 1, 1
         # pos_hint: {"center_y": .5}
@@ -166,59 +215,72 @@
         multiline: False
         focus: False
         cursor_blink: False
+        cursor_color: app.theme.secondary
+        foreground_color: app.theme.text
     ClearButton:
         id: clear_button
         source: f"{application_path}/resources/images/clear.png"
         on_release: app.clear_search()
         size_hint: None, 1
         size: 25, 25
-        border: (0, 0, 0, 0)
-        background_color: self.color
+        background_color: app.theme.transparent
+        background_normal: ""
+        color: app.theme.transparent
     ImageButton:
         source: f"{application_path}/resources/images/search.png"
         on_release: app.open_search()
         size_hint: None, 1
         size: 25, 25
-        border: (0, 0, 0, 0)
+        background_color: app.theme.transparent
+        background_normal: ""
+        color: app.theme.icon
     SettingsButton:
         size_hint: None, 1
         size: 25, 25
-        border: (0, 0, 0, 0)
         source: f"{application_path}/resources/images/settings.png"
         on_release: self.open_settings()
-
-<OptionsPlayButton>:
-    text: "Play"
-    font_name: app.font
+        background_color: app.theme.transparent
+        background_normal: ""
+        color: app.theme.icon
 
 <ArtistOptions>:
     size_hint: None, None
     size: 300, 150
+    background_color: app.theme.background_secondary
     GridLayout:
         rows: 3
         OptionsPlayButton:
             on_release: root.play()
+            background_normal: ""
+            background_color: app.theme.transparent
         AddToQueueButton:
             on_release: root.add_to_queue()
+            background_normal: ""
+            background_color: app.theme.transparent
         InsertNextButton:
             on_release: root.insert_next()
+            background_normal: ""
+            background_color: app.theme.transparent
 
 <AlbumOptions>:
     size_hint: None, None
     size: 300, 150
+    background_color: app.theme.background_secondary
     GridLayout:
         rows: 3
         OptionsPlayButton:
             on_release: root.play()
+            background_color: app.theme.transparent
         AddToQueueButton:
             on_release: root.add_to_queue()
+            background_color: app.theme.transparent
         InsertNextButton:
             on_release: root.insert_next()
+            background_color: app.theme.transparent
 
 <AlbumView>:
     on_release: self.open_album()
-    border: (0, 0, 0, 0)
-    background_color: (0, 0, 0, 0)
+    background_color: app.theme.transparent
     background_normal: ""
     Image:
         id: cover
@@ -227,6 +289,7 @@
     BoxLayout:
         orientation: "vertical"
         Label:
+            color: app.theme.text
             id: title
             font_size: Size.queue_title_font
             shorten: True
@@ -237,6 +300,7 @@
             halign: "left"
             valign: "bottom"
         Label:
+            color: app.theme.text
             id: artist_year
             font_size: Size.queue_artist_font
             shorten: True
@@ -251,20 +315,19 @@
         size: 25, 25
         Button:
             id: uv_options
-            # background_down: f'{application_path}/resources/images/more_vert.png'
-            # background_normal: f'{application_path}/resources/images/more_vert.png'
             on_release: Factory.AlbumOptions(root.ids.title.text).open()
-            border: (0, 0, 0, 0)
-            background_color: (0, 0, 0, 0)
+            background_color: app.theme.transparent
             background_normal: ""
         Image:
             source: f'{application_path}/resources/images/more_vert.png'
             fit_mode: "contain"
+            background_color: app.theme.transparent
+            background_normal: ""
+            color: app.theme.icon
 
 <ArtistView>:
     on_release: self.open_artist()
-    border: (0, 0, 0, 0)
-    background_color: (0, 0, 0, 0)
+    background_color: app.theme.transparent
     background_normal: ""
     Image:
         id: cover
@@ -273,6 +336,7 @@
     BoxLayout:
         orientation: "vertical"
         Label:
+            color: app.theme.text
             id: name
             font_size: Size.queue_title_font
             shorten: True
@@ -282,30 +346,20 @@
             size: self.texture_size
             halign: "left"
             valign: "center"
-        # Label:
-        #     id: year
-        #     font_size: Size.queue_artist_font
-        #     shorten: True
-        #     shorten_from: "right"
-        #     font_name: app.font
-        #     text_size: self.size
-        #     size: self.texture_size
-        #     halign: "left"
-        #     valign: "top"
     AnchorLayout:
         size_hint: None, 1
         size: 25, 25
         Button:
             id: uv_options
-            # background_down: f'{application_path}/resources/images/more_vert.png'
-            # background_normal: f'{application_path}/resources/images/more_vert.png'
             on_release: Factory.ArtistOptions(root.ids.name.text).open()
-            border: (0, 0, 0, 0)
-            background_color: (0, 0, 0, 0)
+            background_color: app.theme.transparent
             background_normal: ""
         Image:
             source: f'{application_path}/resources/images/more_vert.png'
             fit_mode: "contain"
+            background_color: app.theme.text
+            background_normal: ""
+            color: app.theme.icon
 
 <LibraryView>:
     viewclass: self.view_class
@@ -325,20 +379,16 @@
 <FilterButton>:
     chosen_filter: False
     font_name: app.font
-    border: (0, 0, 0, 0)
-    background_color: (0, 0, 0, 0)
+    on_release: Logger.info(self.font_name)
+    background_color: app.theme.transparent
+    color: app.theme.secondary if self.chosen_filter else app.theme.button_text
+    bold: True if self.chosen_filter else False
+    background_down: ""
     background_normal: ""
-    canvas.before:
-        Color:
-            rgba: Color.now_playing_background if self.chosen_filter else (0, 0, 0, 0)
-        Rectangle:
-            size: self.size
-            pos: self.pos
 
 <LibraryPlayer>:
     on_release: self.open_player()
-    border: (0, 0, 0, 0)
-    background_color: (0, 0, 0, 0)
+    background_color: app.theme.transparent
     background_normal: ""
     height: dp(56)
     size_hint: 1, None
@@ -352,6 +402,7 @@
     GridLayout:
         rows: 2
         Label:
+            color: app.theme.text
             font_size: Size.queue_title_font
             shorten: True
             shorten_from: "right"
@@ -362,6 +413,7 @@
             valign: "bottom"
             text: app.player.now_playing.title
         Label:
+            color: app.theme.text
             font_size: Size.queue_artist_font
             shorten: True
             shorten_from: "right"
@@ -372,6 +424,7 @@
             valign: "top"
             text: app.player.now_playing.artist
     Label:
+        color: app.theme.text
         valign: "center"
         halign: "center"
         text_size: self.size
@@ -387,13 +440,16 @@
         source: f"{application_path}/resources/images/play_circle.png"
         fit_mode: "contain"
         on_release: self.toggle_play()
+        background_color: app.theme.transparent
+        background_normal: ""
+        color: app.theme.icon
 
 <LibraryScreen>:
     on_pre_enter: self.update_lv()
     Widget:
         canvas.before:
             Color:
-                rgba: Color.background
+                rgba: app.theme.background
             Rectangle:
                 size: root.size
     BoxLayout:
@@ -435,9 +491,10 @@
     size: 300, 150
     title: ""
     separator_height: 0
+    background_color: app.theme.background_secondary
     # canvas.before:
     #     Color:
-    #         rgba: Color.background
+    #         rgba: app.theme.background
     #     Rectangle:
     #         size: root.size
     BoxLayout:
@@ -446,13 +503,11 @@
             height: self.minimum_height
             size_hint: 1, None
             rows: 2
-            # spacing: 20
             padding: 0, 0, 0, 40
             Label:
+                color: app.theme.text
                 size_hint_y: None
-                # height: 10
                 text: "Volume"
-                font_size: Size.queue_artist_font
                 shorten: True
                 shorten_from: "right"
                 font_name: app.font
@@ -460,6 +515,7 @@
                 size: self.texture_size
                 halign: "center"
                 valign: "center"
+                background_color: app.theme.transparent
             GridLayout:
                 rows: 1
                 cols: 2
@@ -473,12 +529,13 @@
                     on_touch_move: self.slider_move(args[1], self)
                     on_touch_up: self.slider_up(args[1], self)
                     value_track: True if app.volume != 0 else False
-                    value_track_color: Color.slider_track
+                    value_track_color: app.theme.secondary
                     value_track_width: 3
                     background_width: self.value_track_width * 8
                     step: 0.05
                     cursor_size: 0, 0
                 Label:
+                    color: app.theme.text
                     size_hint_y: None
                     size_hint_x: .2
                     height: 10
@@ -488,17 +545,21 @@
                     size: self.texture_size
                     halign: "center"
                     valign: "center"
+                    background_color: app.theme.transparent
         RepeatSpinner:
+            spacing: 0
             text: app.repeat
             values: self.repeat_variants
             font_name: app.font
             on_text: app.repeat = self.text
+            background_color: app.theme.transparent
+            color: app.theme.button_text
 
 <PlayerScreen>:
     Widget:
         canvas.before:
             Color:
-                rgba: Color.background
+                rgba: app.theme.background
             Rectangle:
                 size: root.size
     BoxLayout:
@@ -520,6 +581,7 @@
             orientation: 'vertical'
             # spacing: Spacing.title
             TitleLabel:
+                color: app.theme.text
                 shorten: True
                 shorten_from: 'right'
                 text: root.now_playing.title if root.now_playing is not None else ""
@@ -532,6 +594,7 @@
                 font_name: app.font
                 pos_hint: {"center_y": .5}
             ArtistLabel:
+                color: app.theme.text
                 shorten: True
                 shorten_from: 'right'
                 text: root.now_playing.artist if root.now_playing is not None else ""
@@ -551,7 +614,7 @@
             on_touch_move: self.slider_move(args[1], self)
             on_touch_up: self.slider_up(args[1], self)
             value_track: True if root.slider_value != 0 else False
-            value_track_color: Color.slider_track
+            value_track_color: app.theme.secondary
             value_track_width: 3
             background_width: self.value_track_width * 8
             step: 2
@@ -562,20 +625,20 @@
             orientation: 'horizontal'
             spacing: 15
             PosLabel:
+                color: app.theme.text
                 halign: 'left'
                 text: formated_time(round(root.track_pos))
                 font_name: app.font
                 text_size: self.size
             LengthLabel:
+                color: app.theme.text
                 id: length_label
                 halign: 'right'
                 text: formated_time(root.length)
                 font_name: app.font
                 text_size: self.size
 
-
         BoxLayout:
-            #FIXME: centering buttons without creating 2 "padding" ones
             size_hint: Size.play_buttons
             pos_hint: {"center_x": .5}
             orientation: 'horizontal'
@@ -585,80 +648,77 @@
             SeekBackwardButton:
                 pos_hint: {"center_x": 0}
                 size_hint: (None, None)
+                border: 0, 0, 0, 0
                 size: (40, 40)
-                border: (0, 0, 0, 0)
                 background_down: f'{application_path}/resources/images/replay_10.png'
                 background_normal: f'{application_path}/resources/images/replay_10.png'
-                # text: '-10'
+                background_color: app.theme.icon
             PreviousButton:
                 id: previous_button
                 pos_hint: {"center_x": .25}
                 size_hint: (None, None)
+                border: 0, 0, 0, 0
                 size: (40, 40)
-                border: (0, 0, 0, 0)
                 background_down: f'{application_path}/resources/images/skip_previous.png'
                 background_normal: f'{application_path}/resources/images/skip_previous.png'
                 on_release: self.play_previous()
-                # text: 'Previous'
+                background_color: app.theme.icon
             PlayButton:
                 id: play_button
                 pos_hint: {"center_x": .5}
                 size_hint: (None, None)
+                border: 0, 0, 0, 0
                 size: (40, 40)
-                # text: self.text
-                # background_color: (0, 0, 0, 0)
-                border: (0, 0, 0, 0)
                 background_down: f'{application_path}/resources/images/play_circle.png'
                 background_normal: f'{application_path}/resources/images/play_circle.png'
                 on_release: self.toggle_play()
+                background_color: app.theme.icon
             NextButton:
                 id: next_button
                 pos_hint: {"center_x": .75}
                 size_hint: (None, None)
+                border: 0, 0, 0, 0
                 size: (40, 40)
-                # text: 'Next'
-                border: (0, 0, 0, 0)
                 background_down: f'{application_path}/resources/images/skip_next.png'
                 background_normal: f'{application_path}/resources/images/skip_next.png'
                 on_release: self.play_next()
+                background_color: app.theme.icon
             SeekForwardButton:
                 pos_hint: {"center_x": 1}
+                border: 0, 0, 0, 0
                 size_hint: (None, None)
                 size: (40, 40)
-                border: (0, 0, 0, 0)
                 background_down: f'{application_path}/resources/images/forward_10.png'
                 background_normal: f'{application_path}/resources/images/forward_10.png'
-                # text: '+10'
+                background_color: app.theme.icon
             Widget:
 
         AnchorLayout:
             # FIXME: if possible create button with image that can be smaller than button
             size_hint: Size.queue
             QueueButton:
-                # background_down: f'{application_path}/resources/images/arrow_up.png'
-                # background_normal: f'{application_path}/resources/images/arrow_up.png'
-                border: (0, 0, 0, 0)
-                background_color: (0, 0, 0, 0)
+                background_color: app.theme.transparent
                 background_normal: ""
                 on_release: self.open_queue()
-                # on_release: root.manager.current = "queue"
             Image:
                 source:  f'{application_path}/resources/images/arrow_up.png'
+                background_color: app.theme.transparent
+                background_normal: ""
                 size_hint: None, None
                 pos_hint: {"center_x": .5}
                 size: 100, 50
+                color: app.theme.icon
 
 # https://github.com/kivy-school/recycleex/blob/main
 <TrackView>:
     index:
     now_playing: False
     on_release: self.play_track()
-    border: (0, 0, 0, 0)
-    background_color: (0, 0, 0, 0)
+    background_color: app.theme.transparent
     background_normal: ""
     canvas.before:
         Color:
-            rgba: Color.now_playing_background if self.now_playing else (0, 0, 0, 0)
+            rgba: app.theme.secondary if self.now_playing else app.theme.transparent
         Rectangle:
             size: self.size
             pos: self.pos
@@ -669,6 +729,7 @@
     BoxLayout:
         orientation: "vertical"
         Label:
+            color: app.theme.text
             id: title
             font_size: Size.queue_title_font
             shorten: True
@@ -679,6 +740,7 @@
             halign: "left"
             valign: "bottom"
         Label:
+            color: app.theme.text
             id: artist
             font_size: Size.queue_artist_font
             shorten: True
@@ -689,6 +751,7 @@
             halign: "left"
             valign: "top"
     Label:
+        color: app.theme.text
         id: duration
         font_name: app.font
         size_hint: None, 1
@@ -701,30 +764,42 @@
         ImageButton:
             id: uv_options
             on_release: Factory.TrackOptions(root.index).open()
-            border: (0, 0, 0, 0)
-            background_color: (0, 0, 0, 0)
             source: f'{application_path}/resources/images/more_vert.png'
             fit_mode: "contain"
+            background_normal: ""
+            background_color: app.theme.transparent
+            color: app.theme.transparent
+
+<OptionsPlayButton>:
+    text: "Play"
+    font_name: app.font
+    color: app.theme.button_text
 
 <AddToQueueButton>:
     text: "Add to queue"
     font_name: app.font
+    color: app.theme.button_text
 
 <InsertNextButton>:
     text: "Insert next"
     font_name: app.font
+    color: app.theme.button_text
 
 <TrackOptions>:
     size_hint: None, None
     size: 300, 150
+    background_color: app.theme.background_secondary
     GridLayout:
         rows: 3
         OptionsPlayButton:
             on_release: root.play()
+            background_color: app.theme.transparent
         AddToQueueButton:
             on_release: root.add_to_queue()
+            background_color: app.theme.transparent
         InsertNextButton:
             on_release: root.insert_next()
+            background_color: app.theme.transparent
 
 <QueueView>:
     viewclass: "TrackView"
@@ -745,7 +820,7 @@
     Widget:
         canvas.before:
             Color:
-                rgba: Color.background
+                rgba: app.theme.background
             Rectangle:
                 size: root.size
     BoxLayout:
@@ -760,42 +835,49 @@
             id: qv
 
         AnchorLayout:
-            # https://kivy.org/doc/stable/api-kivy.uix.behaviors.html#module-kivy.uix.behaviors
-            # FIXME: if possible create button with image that can be smaller than button
             size_hint: Size.queue
             CloseQueueButton:
-                # background_down: f'{application_path}/resources/images/arrow_up.png'
-                # background_normal: f'{application_path}/resources/images/arrow_up.png'
-                border: (0, 0, 0, 0)
-                background_color: (0, 0, 0, 0)
                 background_normal: ""
                 on_release: self.close_queue()
-                # on_release: root.manager.current = "queue"
+                background_color: app.theme.transparent
             Image:
                 source:  f'{application_path}/resources/images/arrow_down_80dp.png'
                 size_hint: None, None
                 pos_hint: {"center_x": .5}
                 size: 100, 50
+                background_normal: ""
+                background_color: app.theme.transparent
+                color: app.theme.transparent
 
 <ExitDialog>:
     size_hint: None, None
     size: 300, 150
+    background_color: app.theme.background_secondary
     GridLayout:
         rows: 2
         Label:
+            color: app.theme.text
             text: "Are you sure you want to exit?"
             font_name: app.font
         GridLayout:
             cols: 2
+            spacing: 5
             Button:
                 text: "Yes"
                 on_release: app.stop()
-                border: (0, 0, 0, 0)
-                background_color: (0, 0, 0, 0)
+                background_color: app.theme.transparent
+                color: app.theme.button_text
                 background_normal: ""
+                canvas.before:
             Button:
                 text: "No"
                 on_release: root.dismiss()
-                border: (0, 0, 0, 0)
-                background_color: (0, 0, 0, 0)
+                background_color: app.theme.transparent
+                color: app.theme.button_text
                 background_normal: ""
+                # canvas.before:
+                #     Color:
+                #         rgba: app.theme.border
+                #     Line:
+                #         width: 1
+                #         rectangle: self.x, self.y, self.width, self.height
