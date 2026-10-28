@@ -72,7 +72,7 @@ if platform == "win32":
     from winrt.runtime.interop import initialize_with_window
     from winrt.windows.storage.pickers import FolderPicker, PickerLocationId
 
-__version__ = "1.0.0"
+__version__ = "1.0.0a"
 
 Config.set("input", "mouse", "mouse,multitouch_on_demand")
 
@@ -1375,6 +1375,7 @@ class SimplePlayer(App):
     settings_json = get_config_dir().joinpath("config.json")
     theme = ObjectProperty(Color(), rebind=True)
     available_themes = ListProperty(["VLC", "Lilac AMOLED"])
+    version = __version__
 
     def build(self):
         self.font = "NotoSansJP"
