@@ -360,27 +360,26 @@ class SearchTextInput(TextInput):
     def close_search(self):
         app = App.get_running_app()
         app.search_active = False
+        if self.search_event is not None:
+            self.search_event.cancel()
         self.quote_exists = False
         self.should_search = False
         self.disabled = True
         self.background_color = app.theme.transparent
-        self.text = ""
 
     def open_search(self):
         app = App.get_running_app()
         self.background_color = app.theme.background
+        self.quote_exists = True
+        self.should_search = False
         self.text = self.search_quote
         self.disabled = False
         self.focus = True
         self.cursor = (0, 0)
-        self.quote_exists = True
-        self.should_search = False
         app.search_active = True
 
     def on_text(self, obj, value):
-        if self.quote_exists:
-            self.text = value[0:1]
-            self.quote_exists = False
+        if not self.quote_exists:
             self.should_search = True
         if self.should_search:
             if self.search_event is not None:
@@ -388,11 +387,21 @@ class SearchTextInput(TextInput):
             app = App.get_running_app()
             self.search_event = Clock.schedule_once(lambda dt: app.search(self.text), 1)
 
+    def insert_text(self, substring, from_undo=False):
+        if self.quote_exists:
+            self.text = ""
+            self.quote_exists = False
+        return super().insert_text(substring, from_undo=from_undo)
+
     def on_focus(self, obj, value):
         app = App.get_running_app()
         if value is False:
             if self.text == "" or self.text == self.search_quote:
                 app.hide_search()
+        elif (value is True
+              and self.quote_exists is not True
+              and self.search_quote == self.text):
+            self.quote_exists = True
 
 
 class ClearButton(ImageButton):
@@ -1080,7 +1089,9 @@ class SettingsScreen(Screen):
         app = App.get_running_app()
         settings = app.root.get_screen("settings")
         path = settings.ids.path_text_input.text
-        if Path(path).is_dir():
+        if (path != ""
+            and Path(path).is_dir()
+            and str(Path(path)) not in self.music_paths):
             settings.ids.path_text_input.text = ""
             settings.ids.psv.paths_amount += 1
             settings.ids.psv.data.append({"pos": settings.ids.psv.paths_amount,
@@ -1088,8 +1099,9 @@ class SettingsScreen(Screen):
             self.music_paths.append(path)
             with open(app.settings_json, "w") as f:
                 f.write(app.get_settings_json())
+            settings.ids.path_text_input.text = settings.ids.path_text_input.quote
         else:
-            Logger.error(f"Settings: Path {path} is invalid")
+            Logger.error(f"Settings: Path {path} is invalid or already added")
 
     def save_music_path(self, path: Path):
         app = App.get_running_app()
@@ -1104,6 +1116,25 @@ class SettingsScreen(Screen):
                 f.write(app.get_settings_json())
         else:
             Logger.error(f"Settings: Path {path} is invalid")
+
+
+class PathTextInput(TextInput):
+    quote_exists = False
+    quote = "Enter path to your music or use file picker"
+
+    def on_focus(self, obj, value):
+        if (not self.quote_exists
+            and value is True
+            and self.text == self.quote):
+            self.quote_exists = True
+        elif (value is False and self.text == ""):
+            self.text = self.quote
+
+    def insert_text(self, substring, from_undo=False):
+        if self.quote_exists:
+            self.text = ""
+            self.quote_exists = False
+        return super().insert_text(substring, from_undo=from_undo)
 
 
 class LibraryView(RecycleView):

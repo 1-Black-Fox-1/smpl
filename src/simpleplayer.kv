@@ -140,7 +140,7 @@
             height: self.minimum_height
             cols: 2
             spacing: 10
-            TextInput:
+            PathTextInput:
                 id: path_text_input
                 height: 40
                 background_normal: ""
@@ -151,6 +151,7 @@
                 multiline: False
                 font_size: 15
                 font_name: app.font
+                text: self.quote
                 on_text_validate: root.save_music_path_from_text_input()
                 cursor_blink: False
                 cursor_color: app.theme.secondary
