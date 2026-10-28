@@ -1,3 +1,5 @@
+import asyncio
+
 from os import makedirs
 from pathlib import Path
 from sqlite3 import connect
@@ -12,51 +14,54 @@ db_path = Path(get_config_dir()).joinpath("songs.db")
 # TODO: Add album artist for album artist and artist for song artist
 # TODO: create proper db
 
-def create_db(audio_paths: list[Path|str]):
+async def create_db(audio_paths: list[Path|str]):
     con = connect(db_path)
     cur = con.cursor()
     cur.execute("CREATE TABLE song(album_pos, album, title, artist, length, year, image, file)")
+
+    async def add_audio(path):
+        if is_audio(path):
+            mt = RawMetadata(path)
+            if mt.tag.track is None:
+                album_pos = 0
+            else:
+                album_pos = mt.tag.track
+            if mt.tag.album is None:
+                album = "Unknown album"
+            else:
+                album = mt.tag.album
+            if mt.tag.title is None:
+                title = "Unknown name"
+            else:
+                title = mt.tag.title
+            if mt.tag.albumartist is None:
+                if mt.tag.artist is None:
+                    artist = "Unknown artist"
+                else:
+                    artist = mt.tag.artist
+            else:
+                artist = mt.tag.albumartist
+            if mt.tag.duration is None:
+                # TODO: probably player will fail
+                length = 0
+            else:
+                length = mt.tag.duration
+            if mt.tag.year is None:
+                year = 0
+            else:
+                year = mt.tag.year
+            image = mt.image_path
+            data = (album_pos, album, title, artist,
+                    length, year, image, str(path))
+            Logger.info(f"DB: data for {path} - {data}")
+            cur.execute("INSERT INTO song VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                        data)
+            await asyncio.sleep(0)
+
     for audio_path in audio_paths:
         audio_path = Path(audio_path)
         for path in audio_path.rglob('*'):
-            if is_audio(path):
-                mt = RawMetadata(path)
-                if mt.tag.track is None:
-                    album_pos = 0
-                else:
-                    album_pos = mt.tag.track
-                if mt.tag.album is None:
-                    album = "Unknown album"
-                else:
-                    album = mt.tag.album
-                if mt.tag.title is None:
-                    title = "Unknown name"
-                else:
-                    title = mt.tag.title
-                if mt.tag.albumartist is None:
-                    if mt.tag.artist is None:
-                        artist = "Unknown artist"
-                    else:
-                        artist = mt.tag.artist
-                else:
-                    artist = mt.tag.albumartist
-                if mt.tag.duration is None:
-                    # TODO: probably player will fail
-                    length = 0
-                else:
-                    length = mt.tag.duration
-                if mt.tag.year is None:
-                    year = 0
-                else:
-                    year = mt.tag.year
-                image = mt.image_path
-                data = (album_pos, album, title, artist,
-                        length, year, image, str(path))
-                # insert values into a table
-                # cu.execute("insert into lang values (?, ?)", ("C", 1972))
-                Logger.info(f"DB: data for {path} - {data}")
-                cur.execute("INSERT INTO song VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                            data)
+            await add_audio(path)
     con.commit()
     con.close()
 
@@ -82,10 +87,13 @@ def db_exists() -> bool:
         return True
 
 
-def get_all_tracks() -> list[Metadata]:
+def get_all_tracks() -> list[Metadata]|None:
     con = connect(db_path)
     cur = con.cursor()
-    query = cur.execute("SELECT *, rowid FROM song ORDER BY title")
+    try:
+        query = cur.execute("SELECT *, rowid FROM song ORDER BY title")
+    except Exception:
+        return None
     res = query.fetchall()
     for i in range(len(res)):
         # print(res[i])

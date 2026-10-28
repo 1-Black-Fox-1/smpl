@@ -82,6 +82,7 @@
         background_color: app.theme.transparent
         color: app.theme.icon
 
+# TODO make canvas https://kivy.org/doc/stable/api-kivy.uix.dropdown.html#kivy.uix.dropdown.DropDown
 <ThemeSpinnerOption>:
     color: app.theme.button_text
     background_color: app.theme.background_secondary
@@ -386,7 +387,6 @@
 <FilterButton>:
     chosen_filter: False
     font_name: app.font
-    on_release: Logger.info(self.font_name)
     background_color: app.theme.transparent
     color: app.theme.secondary if self.chosen_filter else app.theme.button_text
     bold: True if self.chosen_filter else False

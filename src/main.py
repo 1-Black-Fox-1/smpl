@@ -72,7 +72,7 @@ if platform == "win32":
     from winrt.runtime.interop import initialize_with_window
     from winrt.windows.storage.pickers import FolderPicker, PickerLocationId
 
-__version__ = "1.0.0a"
+__version__ = "1.1.0a"
 
 Config.set("input", "mouse", "mouse,multitouch_on_demand")
 
@@ -836,7 +836,6 @@ class PlayerScreen(Screen):
             prev_track_loop = None
         app = App.get_running_app()
         app.pause_pos = 0
-        # Logger.info(f"Player: Before loading new song {self.now_playing.file}")
         self.sound_provider = SoundLoader.load(self.now_playing.file)
         Logger.info(f"Player: New song {self.now_playing.title}")
         self.set_length()
@@ -1066,13 +1065,24 @@ class SettingsButton(ImageButton):
 class ScanIconButton(ButtonBehavior, Image):
     def scan(self):
         settings = App.get_running_app().root.get_screen("settings")
-        if db_exists():
-            remove_db()
-        create_db(settings.music_paths)
         app = App.get_running_app()
-        app.update_songs(get_all_tracks())
-        app.update_albums(get_all_albums())
-        app.update_artists(get_all_artists())
+        if app.scanning is False:
+            if db_exists():
+                remove_db()
+            task = create_task(create_db(settings.music_paths))
+            app.scanning = True
+            app.background_tasks.add(task)
+            task.add_done_callback(app.background_tasks.discard)
+            task.add_done_callback(lambda task: app.update_songs(get_all_tracks()))
+            task.add_done_callback(lambda task: set_scanning(False))
+
+        def set_scanning(value):
+            app = App.get_running_app()
+            app.scanning = value
+        # Clock.schedule_once(lambda dt: app.update_songs(get_all_tracks()), 5)
+        # app.update_songs(get_all_tracks())
+        # app.update_albums(get_all_albums())
+        # app.update_artists(get_all_artists())
         app.set_default_filter()
 
 
@@ -1143,9 +1153,20 @@ class LibraryView(RecycleView):
     view_class = StringProperty("ArtistView")
     hl_pos = NumericProperty(0)
     row_ids = DictProperty()
+    scanning_state = 0
+    scanning_labels = ["Scanning in progress.",
+                       "Scanning in progress..",
+                       "Scanning in progress..."]
 
     def update_lv(self, data: list):
         app = App.get_running_app()
+        if app.scanning is True:
+            self.view_class = "Label"
+            self.data = [{"text": self.scanning_labels[self.scanning_state]}]
+            self.scanning_state += 1
+            if self.scanning_state == len(self.scanning_labels):
+                self.scanning_state = 0
+            return
         app.last_data = data
         if data != []:
             if type(data[0]) is Artist:
@@ -1379,6 +1400,7 @@ class SimplePlayer(App):
     available_themes = ListProperty(["VLC", "Lilac AMOLED"])
     version = __version__
     background_tasks = set()
+    scanning = BooleanProperty(False)
 
     def build(self):
         self.font = "NotoSansJP"
@@ -1462,6 +1484,7 @@ class SimplePlayer(App):
         return False
 
     def update_songs(self, songs):
+        if songs is None: return None
         self.songs = songs
 
     def update_albums(self, albums):
@@ -1607,6 +1630,19 @@ class SimplePlayer(App):
         task = create_task(self.save_path())
         self.background_tasks.add(task)
         task.add_done_callback(self.background_tasks.discard)
+
+    scanning_event = None
+
+    def on_scanning(self, obj, value):
+        if value is True and self.scanning_event is None:
+            self.scanning_event = Clock.schedule_interval(lambda dt: self.update_lv([]), 1)
+        if value is False:
+            Clock.schedule_once(lambda dt: self.update_songs(get_all_tracks()), -1)
+            Clock.schedule_once(lambda dt: self.update_albums(get_all_albums()), -1)
+            Clock.schedule_once(lambda dt: self.update_artists(get_all_artists()), -1)
+            Clock.schedule_once(lambda dt: self.set_default_filter(), -1)
+            self.scanning_event.cancel()
+            self.scanning_event = None
 
 # if __name__ == '__main__':
 #     SimplePlayer().run()
