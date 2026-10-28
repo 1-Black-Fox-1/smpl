@@ -847,7 +847,9 @@ class PlayerScreen(Screen):
         if dbus_support:
             player_interface.emit_properties_changed({"Metadata": player_interface.create_dbus_metadata(self.now_playing)})
         if win_media_support:
-            create_task(on_media_opened(self, None))
+            task = create_task(on_media_opened(self, None))
+            self.background_tasks.add(task)
+            task.add_done_callback(self.background_tasks.discard)
         if prev_track_loop is not None:
             self.sound_provider.loop = prev_track_loop
         if prev_track_state == "play":
@@ -1376,6 +1378,7 @@ class SimplePlayer(App):
     theme = ObjectProperty(Color(), rebind=True)
     available_themes = ListProperty(["VLC", "Lilac AMOLED"])
     version = __version__
+    background_tasks = set()
 
     def build(self):
         self.font = "NotoSansJP"
@@ -1601,7 +1604,9 @@ class SimplePlayer(App):
             Logger.info(f"App: Path saved {path}")
 
     def run_save_path(self):
-        create_task(self.save_path())
+        task = create_task(self.save_path())
+        self.background_tasks.add(task)
+        task.add_done_callback(self.background_tasks.discard)
 
 # if __name__ == '__main__':
 #     SimplePlayer().run()
