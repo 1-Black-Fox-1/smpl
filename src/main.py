@@ -58,10 +58,11 @@ from metadata import Metadata
 dbus_support = get_dbus_support()
 win_media_support = get_win_media_support()
 if dbus_support:
-    from dbus_next import Variant
-    from dbus_next.aio import MessageBus
-
     from dbus import player_interface
+
+    if platform == "linux":
+        from dbus_next import Variant
+        from dbus_next.aio import MessageBus
 
 elif win_media_support:
     from winmedia import controls, on_media_opened
@@ -76,7 +77,7 @@ if platform == "win32":
     from winrt.runtime.interop import initialize_with_window
     from winrt.windows.storage.pickers import FolderPicker, PickerLocationId
 
-__version__ = "1.2.1a"
+__version__ = "1.2.2a"
 
 Config.set("input", "mouse", "mouse,multitouch_on_demand")
 
@@ -1381,12 +1382,10 @@ class RepeatSpinner(SpinnerWithThemeOption):
 
 
 class SimplePlayer(App):
-    volume = BoundedNumericProperty(1, min=0, max=1,
+    volume = BoundedNumericProperty(0.5, min=0, max=1,
                                     errorhander=lambda x: 1 if x > 1 else 0)
     pause_pos = NumericProperty(0)
-    # TODO: save loop status in config
     repeat = StringProperty("No repeat")
-    # TODO: should be enum
     repeat_variants = {"no_repeat": "No repeat",
                        "repeat": "Repeat",
                        "repeat_queue": "Repeat queue"}
