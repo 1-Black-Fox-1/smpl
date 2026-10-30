@@ -77,13 +77,13 @@ if platform == "win32":
     from winrt.runtime.interop import initialize_with_window
     from winrt.windows.storage.pickers import FolderPicker, PickerLocationId
 
-__version__ = "1.2.2a"
+__version__ = "1.3.0a"
 
 Config.set("input", "mouse", "mouse,multitouch_on_demand")
 
 # FIXME: go/scroll to 0 item when open album/artist
 # FIXME: Jumping search on low size screen
-# TODO!: if audio device is disconnected stop music
+# TODO!: if audio device is disconnected stop music for win
 # TODO: tap on cover to open it fullscreen
 # TODO: check out pango text provider
 # TODO: better logging
