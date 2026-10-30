@@ -76,7 +76,7 @@ if platform == "win32":
     from winrt.runtime.interop import initialize_with_window
     from winrt.windows.storage.pickers import FolderPicker, PickerLocationId
 
-__version__ = "1.2.0a"
+__version__ = "1.2.1a"
 
 Config.set("input", "mouse", "mouse,multitouch_on_demand")
 
@@ -280,7 +280,7 @@ class SeekBackwardButton(Button):
             player_interface.Seeked(time_to_seek)
 
 
-class QueueButton(Button):
+class QueueButton(ImageButton):
     def open_queue(self):
         sm = App.get_running_app().root
         sm.transition = CardTransition()
@@ -1035,7 +1035,7 @@ class QueueScreen(Screen):
         self.ids.qv.update_hl()
 
 
-class CloseQueueButton(Button):
+class CloseQueueButton(ImageButton):
     def close_queue(self):
         sm = App.get_running_app().root
         sm.transition = CardTransition()

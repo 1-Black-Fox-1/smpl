@@ -570,7 +570,8 @@
             Rectangle:
                 size: root.size
     BoxLayout:
-        padding: Padding.box
+        padding: 20, 10, 20, 0
+        # padding: Padding.box
         orientation: 'vertical'
         size: root.size
         spacing: Spacing.box
@@ -700,21 +701,17 @@
                 background_color: app.theme.icon
             Widget:
 
-        AnchorLayout:
-            # FIXME: if possible create button with image that can be smaller than button
-            size_hint: Size.queue
-            QueueButton:
-                background_color: app.theme.transparent
-                background_normal: ""
-                on_release: self.open_queue()
-            Image:
-                source:  f'{application_path}/resources/images/arrow_up.png'
-                background_color: app.theme.transparent
-                background_normal: ""
-                size_hint: None, None
-                pos_hint: {"center_x": .5}
-                size: 100, 50
-                color: app.theme.icon
+        QueueButton:
+            on_release: self.open_queue()
+            source:  f'{application_path}/resources/images/arrow_up.png'
+            background_color: app.theme.transparent
+            background_normal: ""
+            pos_hint: {"center_x": .5}
+            size_hint: 1, None
+            size: 100, 50
+            background_normal: ""
+            background_color: app.theme.transparent
+            color: app.theme.icon
 
 # https://github.com/kivy-school/recycleex/blob/main
 <TrackView>:
@@ -831,7 +828,8 @@
             Rectangle:
                 size: root.size
     BoxLayout:
-        padding: Padding.box
+        padding: 20, 10, 20, 0
+        # padding: Padding.box
         orientation: 'vertical'
         size: root.size
         spacing: Spacing.box
@@ -841,20 +839,19 @@
         QueueView:
             id: qv
 
-        AnchorLayout:
-            size_hint: Size.queue
-            CloseQueueButton:
-                background_normal: ""
-                on_release: self.close_queue()
-                background_color: app.theme.transparent
-            Image:
-                source:  f'{application_path}/resources/images/arrow_down_80dp.png'
-                size_hint: None, None
-                pos_hint: {"center_x": .5}
-                size: 100, 50
-                background_normal: ""
-                background_color: app.theme.transparent
-                color: app.theme.transparent
+        CloseQueueButton:
+            # size_hint: Size.queue
+            on_release: self.close_queue()
+            background_color: app.theme.transparent
+            source:  f'{application_path}/resources/images/arrow_down_80dp.png'
+            fit_mode: "contain"
+            size_hint: None, None
+            pos_hint: {"center_x": .5}
+            size_hint: 1, None
+            size: 100, 50
+            background_normal: ""
+            background_color: app.theme.transparent
+            color: app.theme.icon
 
 <ExitDialog>:
     size_hint: None, None
