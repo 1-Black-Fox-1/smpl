@@ -77,11 +77,10 @@ if platform == "win32":
     from winrt.runtime.interop import initialize_with_window
     from winrt.windows.storage.pickers import FolderPicker, PickerLocationId
 
-__version__ = "1.3.0a"
+__version__ = "1.3.1a"
 
 Config.set("input", "mouse", "mouse,multitouch_on_demand")
 
-# FIXME: go/scroll to 0 item when open album/artist
 # FIXME: Jumping search on low size screen
 # TODO!: if audio device is disconnected stop music for win
 # TODO: tap on cover to open it fullscreen
@@ -313,41 +312,47 @@ class LibraryPlayButton(ImageButton):
 
 class BackButton(ImageButton):
     def go_back(self):
-        root = App.get_running_app().root
-        screen = root.current
-        if screen == "settings":
-            root.current = "library"
-            screen = root.current
-            library = root.get_screen(screen)
-            if library.last_opened_album is not None:
-                library.open_album(library.last_opened_album)
-            elif library.last_opened_artist is not None:
-                library.open_artist(library.last_opened_artist)
-        elif screen == "player" or screen == "queue":
-            root.transition = SlideTransition()
-            root.transition.direction = "right"
-            root.current = "library"
-            screen = root.current
-            library = root.get_screen(screen)
-            if library.last_opened_album is not None:
-                library.open_album(library.last_opened_album)
-            elif library.last_opened_artist is not None:
-                library.open_artist(library.last_opened_artist)
-        elif screen == "library":
-            library = root.get_screen(screen)
+        def restore_library():
+            app = App.get_running_app()
+            root = app.root
+            library = root.get_screen("library")
             if library.last_opened_artist is not None and library.last_opened_album is not None:
                 library.open_artist(library.last_opened_artist)
+                if app.library_state == LibraryState.FILTER:
+                    app.scroll_state[LibraryState.FILTER.value] = library.ids.lv.scroll_y
+                    library.ids.lv.scroll_y = 1
+                else:
+                    library.ids.lv.scroll_y = app.scroll_state[LibraryState.ARTIST.value]
                 library.last_opened_album = None
             elif library.last_opened_artist is not None and library.last_opened_album is None:
                 library_filter = library.ids.lib_filter
                 library_filter.set_filter(library_filter.filter_chosen)
                 library.last_open_artist = None
+                library.ids.lv.scroll_y = app.scroll_state[LibraryState.FILTER.value]
+                app.scroll_state[LibraryState.ARTIST.value] = 1
             elif library.last_opened_album is not None:
                 library_filter = library.ids.lib_filter
                 library_filter.set_filter(library_filter.filter_chosen)
                 library.last_opened_album = None
-            else:
+                library.ids.lv.scroll_y = app.scroll_state[LibraryState.FILTER.value]
+                # app.scroll_state[LibraryState.ARTIST] = 1
+
+        root = App.get_running_app().root
+        screen = root.current
+        if screen == "settings":
+            root.current = "library"
+            library = root.get_screen("library")
+        elif screen == "player" or screen == "queue":
+            root.transition = SlideTransition()
+            root.transition.direction = "right"
+            root.current = "library"
+            library = root.get_screen("library")
+        elif screen == "library":
+            library = root.get_screen(screen)
+            if library.last_opened_artist is None and library.last_opened_album is None:
                 Factory.ExitDialog().open()
+            else:
+                restore_library()
 
 
 class ExitDialog(ModalView):
@@ -1303,6 +1308,8 @@ class LibraryFilter(GridLayout):
         library = app.root.get_screen("library")
         if self.filter_chosen == filter:
             self.on_filter_chosen(self, filter)
+        if filter != self.filter_chosen:
+            library.ids.lv.scroll_y = 1
         self.filter_chosen = filter
         if self.filter_chosen == Filter.albums:
             library.ids.filter_albums.chosen_filter = True
@@ -1313,7 +1320,10 @@ class LibraryFilter(GridLayout):
         library.ids.lv.update_lv(app.get_data_by_filter())
 
     def on_filter_chosen(self, obj, value):
-        library = App.get_running_app().root.get_screen("library")
+        app = App.get_running_app()
+        library = app.root.get_screen("library")
+        if app.library_state == LibraryState.FILTER:
+            library.ids.lv.scroll_y = 1
         if value == Filter.artists:
             library.ids.lv.view_class = "ArtistView"
         elif value == Filter.albums:
@@ -1322,6 +1332,7 @@ class LibraryFilter(GridLayout):
             library.ids.lv.view_class = "TrackView"
         library.last_opened_album = None
         library.last_opened_artist = None
+        app.library_state = LibraryState.FILTER
 
 
 class LibraryPlayer(BoxLayout, Button):
@@ -1332,6 +1343,12 @@ class LibraryPlayer(BoxLayout, Button):
         sm.transition = SlideTransition()
         sm.transition.direction = "up"
         sm.current = "player"
+
+
+class LibraryState(Enum):
+    FILTER = 0
+    ARTIST = 1
+    ALBUM = 2
 
 
 class LibraryScreen(Screen):
@@ -1345,6 +1362,12 @@ class LibraryScreen(Screen):
         self.ids.lv.view_class = "TrackView"
         self.ids.lv.update_lv(songs)
         self.last_opened_album = name
+        if app.library_state == LibraryState.FILTER:
+            app.scroll_state[LibraryState.FILTER.value] = self.ids.lv.scroll_y
+        else:
+            app.scroll_state[LibraryState.ARTIST.value] = self.ids.lv.scroll_y
+        self.ids.lv.scroll_y = 1
+        app.library_state = LibraryState.ALBUM
         app.hide_search()
 
     def open_artist(self, name: str):
@@ -1354,12 +1377,11 @@ class LibraryScreen(Screen):
         self.ids.lv.view_class = "AlbumView"
         self.ids.lv.update_lv(albums)
         self.last_opened_artist = name
+        if app.library_state == LibraryState.FILTER:
+            app.scroll_state[LibraryState.FILTER.value] = self.ids.lv.scroll_y
+            self.ids.lv.scroll_y = 1
+        app.library_state = LibraryState.ARTIST
         app.hide_search()
-
-    # TODO: remove this, it is only being used in .kv
-    def update_lv(self):
-        app = App.get_running_app()
-        Clock.schedule_once(lambda dt: self.ids.lv.update_lv(app.get_data_by_filter()), -1)
 
     def update_hl(self):
         self.ids.lv.update_hl()
@@ -1404,6 +1426,8 @@ class SimplePlayer(App):
     version = __version__
     background_tasks = set()
     scanning = BooleanProperty(False)
+    library_state = LibraryState.FILTER
+    scroll_state = [1, 1]
 
     def build(self):
         self.font = "NotoSansJP"
@@ -1515,7 +1539,7 @@ class SimplePlayer(App):
             self.save_config()
 
     def update_lv(self, data: list):
-        self.root.get_screen("library").ids.lv.update_lv(data)
+        Clock.schedule_once(lambda dt: self.root.get_screen("library").ids.lv.update_lv(data), -1)
 
     def set_default_filter(self):
         # self.update_artists(get_all_artists())

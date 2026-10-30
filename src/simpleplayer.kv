@@ -452,7 +452,7 @@
         color: app.theme.icon
 
 <LibraryScreen>:
-    on_pre_enter: self.update_lv()
+    on_pre_enter: app.update_lv(app.last_data)
     Widget:
         canvas.before:
             Color:
