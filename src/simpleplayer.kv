@@ -14,6 +14,7 @@
     size_hint: Size.top_buttons
     orientation: "horizontal"
     BackButton:
+        id: back_button
         size_hint: None, 1
         size: 25, 25
         source: f"{application_path}/resources/images/arrow_back.png"
@@ -65,6 +66,7 @@
     size_hint: Size.top_buttons
     spacing: 5
     BackButton:
+        id: back_button
         size_hint: None, 1
         size: 25, 25
         source: f"{application_path}/resources/images/arrow_back.png"
@@ -103,6 +105,7 @@
         spacing: Spacing.box
 
         SettingsTopPanel:
+            id: settings_top_panel
 
         Label: 
             text: f"smpl - {app.version}"
@@ -201,6 +204,7 @@
     size_hint: Size.top_buttons
     spacing: 5
     BackButton:
+        id: back_button
         size_hint: None, 1
         size: 25, 25
         source: f"{application_path}/resources/images/arrow_back.png"
@@ -577,6 +581,7 @@
         spacing: Spacing.box
 
         TopPanel:
+            id: top_panel
 
 # TODO: https://kivy.org/doc/stable/api-kivy.graphics.boxshadow.html
         Image:
@@ -835,6 +840,7 @@
         spacing: Spacing.box
 
         TopPanel:
+            id: top_panel
 
         QueueView:
             id: qv

@@ -96,7 +96,7 @@ if platform == "win32":
     from winrt.runtime.interop import initialize_with_window
     from winrt.windows.storage.pickers import FolderPicker, PickerLocationId
 
-__version__ = "1.4.0a"
+__version__ = "1.5.0a"
 
 # FIXME: Jumping search on low size screen
 # TODO!: if audio device is disconnected stop music for win
@@ -353,8 +353,8 @@ class BackButton(ImageButton):
                 library.last_opened_album = None
                 library.ids.lv.scroll_y = app.scroll_state[LibraryState.FILTER.value]
                 # app.scroll_state[LibraryState.ARTIST] = 1
-
-        root = App.get_running_app().root
+        app = App.get_running_app()
+        root = app.root
         screen = root.current
         if screen == "settings":
             root.current = "library"
@@ -366,8 +366,13 @@ class BackButton(ImageButton):
             library = root.get_screen("library")
         elif screen == "library":
             library = root.get_screen(screen)
-            if library.last_opened_artist is None and library.last_opened_album is None:
-                Factory.ExitDialog().open()
+            if (library.last_opened_artist is None
+                and library.last_opened_album is None
+                and not app.exit_dialog_opened):
+                app.exit_dialog = Factory.ExitDialog().open()
+                app.exit_dialog_opened = True
+            elif app.exit_dialog_opened:
+                app.exit_dialog_opened = False
             else:
                 restore_library()
 
@@ -1445,6 +1450,7 @@ class SimplePlayer(App):
     scanning = BooleanProperty(False)
     library_state = LibraryState.FILTER
     scroll_state = [1, 1]
+    exit_dialog_opened = BooleanProperty(False)
 
     def build(self):
         self.font = "NotoSansJP"
@@ -1455,6 +1461,7 @@ class SimplePlayer(App):
         self.title = "Simple Player"
         self.icon = f"{application_path}/resources/images/simple-player.png"
         self.display_settings = lambda dt: None
+        Window.bind(on_key_up=self.on_key_up)
 
         sm = ScreenManager(transition=CardTransition())
         sm.add_widget(LibraryScreen(name="library"))
@@ -1782,6 +1789,20 @@ class SimplePlayer(App):
             Clock.schedule_once(lambda dt: self.set_default_filter(), -1)
             self.scanning_event.cancel()
             self.scanning_event = None
+
+    def go_back(self):
+        if self.root.current == "library":
+            self.root.current_screen.ids.lib_top_panel.ids.back_button.go_back()
+        elif self.root.current == "settings":
+            self.root.current_screen.ids.settings_top_panel.ids.back_button.go_back()
+        else:
+            self.root.current_screen.ids.top_panel.ids.back_button.go_back()
+
+    def on_key_up(self, window, key, scancode):
+        # Escape
+        if key == 27:
+            self.go_back()
+
 
 # if __name__ == '__main__':
 #     SimplePlayer().run()
