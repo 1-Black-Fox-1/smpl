@@ -13,9 +13,10 @@ from sys import platform
 from enum import Enum
 from json import dumps, loads
 from shutil import which
-from asyncio import create_task
+from asyncio import create_task, sleep
 from pathlib import Path
 from subprocess import run as subrun
+from urllib.parse import unquote, urlparse
 
 from rapidfuzz import fuzz
 from kivy.app import App
@@ -57,6 +58,9 @@ from metadata import Metadata
 dbus_support = get_dbus_support()
 win_media_support = get_win_media_support()
 if dbus_support:
+    from dbus_next import Variant
+    from dbus_next.aio import MessageBus
+
     from dbus import player_interface
 
 elif win_media_support:
@@ -72,7 +76,7 @@ if platform == "win32":
     from winrt.runtime.interop import initialize_with_window
     from winrt.windows.storage.pickers import FolderPicker, PickerLocationId
 
-__version__ = "1.1.0a"
+__version__ = "1.2.0a"
 
 Config.set("input", "mouse", "mouse,multitouch_on_demand")
 
@@ -1118,7 +1122,7 @@ class SettingsScreen(Screen):
     def save_music_path(self, path: Path):
         app = App.get_running_app()
         settings = app.root.get_screen("settings")
-        if path.is_dir():
+        if path.is_dir() and path != "" and str(path) not in self.music_paths:
             path = str(path)
             settings.ids.psv.paths_amount += 1
             settings.ids.psv.data.append({"pos": settings.ids.psv.paths_amount,
@@ -1127,7 +1131,7 @@ class SettingsScreen(Screen):
             with open(app.settings_json, "w") as f:
                 f.write(app.get_settings_json())
         else:
-            Logger.error(f"Settings: Path {path} is invalid")
+            Logger.error(f"Settings: Path {path} is invalid or already added")
 
 
 class PathTextInput(TextInput):
@@ -1589,6 +1593,100 @@ class SimplePlayer(App):
                 Logger.info("App: User closed file picker")
                 return None
         elif platform == "linux":
+
+            async def has_xdg_file_picker():
+                bus = await MessageBus().connect()
+                has_xdg_file_picker = False
+                version = None
+                try:
+                    proxy_object = bus.get_proxy_object("org.freedesktop.portal.Desktop",
+                                                        "/org/freedesktop/portal/desktop",
+                                                        introspection)
+                    interface = proxy_object.get_interface("org.freedesktop.portal.FileChooser")
+                    version = await interface.get_version()
+                    has_xdg_file_picker = True
+                except Exception:
+                    has_xdg_file_picker = False
+                if version == 4 and has_xdg_file_picker:
+                    return True
+                else:
+                    return False
+
+            if await has_xdg_file_picker():
+                bus = await MessageBus().connect()
+                # OpenFile (
+                #         IN parent_window s,
+                #         IN title s,
+                #         IN options a{sv},
+                #         OUT handle o)
+                introspection = ("""
+                                 <node name="/org/freedesktop/portal/desktop">
+                                    <interface name="org.freedesktop.portal.FileChooser">
+                                        <method name="OpenFile">
+                                            <arg name="parent_window" type="s" direction="in"/>
+                                            <arg name="title" type="s" direction="in"/>
+                                            <arg name="options" type="a{sv}" direction="in"/>
+                                            <arg name="handle" type="o" direction="out"/>
+                                        </method>
+                                        <property name="version" type="u" accsess="read"/>
+                                    </interface>
+                                </node>
+                                """)
+                proxy_object = bus.get_proxy_object("org.freedesktop.portal.Desktop",
+                                                    "/org/freedesktop/portal/desktop",
+                                                    introspection)
+                interface = proxy_object.get_interface("org.freedesktop.portal.FileChooser")
+                hwnd = str(Window.get_window_info().window)
+                title = "Choose where to scan for music"
+                current_folder = (str(Path.home().joinpath("/Music")) + "\0").encode()
+                options = {
+                        "handle_token": Variant("s", hwnd),
+                        "directory": Variant("b", True),
+                        "current_folder": Variant("ay", current_folder)
+                        }
+                request_object = await interface.call_open_file(hwnd, title, options)
+                # Response (
+                #         response u,
+                #         results a{sv}
+                #         )
+                introspection = f"""
+                                <node name="{request_object}">
+                                    <interface name="org.freedesktop.portal.Request">
+                                        <signal name="Response">
+                                            <arg name="response" type="u"/>
+                                            <arg name="results" type="a{{sv}}"/>
+                                        </signal>
+                                    </interface>
+                                </node>
+                """
+
+                def request_complete(response, results, res):
+                    folder = None
+                    if response == 0:
+                        folder = Path(unquote(urlparse(results["uris"].value[0]).path))
+                        Logger.info(f"App: Folder - {folder}")
+                    if response == 1:
+                        Logger.info("App: User closed file picker")
+                    if response == 2:
+                        Logger.info("App: File picker is closed by system")
+                    res["folder"] = folder
+                    res["complete"] = True
+
+                proxy_object = bus.get_proxy_object("org.freedesktop.portal.Desktop",
+                                                    f"{request_object}",
+                                                    introspection)
+                interface = proxy_object.get_interface("org.freedesktop.portal.Request")
+                request = {"folder": None, "complete": False}
+                interface.on_response(lambda response, results:
+                                      request_complete(response,
+                                                       results,
+                                                       request))
+                while not request["complete"]:
+                    await sleep(0)
+                interface.off_response(request_complete)
+                folder = request["folder"]
+                return folder
+
             if which("zenity") is not None:
                 cmd = ["zenity",
                        "--file-selection",
@@ -1601,7 +1699,8 @@ class SimplePlayer(App):
                 else:
                     Logger.info("App: User closed file picker")
                     return None
-            elif which("kdialog") is not None:
+
+            if which("kdialog") is not None:
                 cmd = ["kdialog",
                        "--getexistingdirectory",
                        f"{Path.home()}/Music/"]
@@ -1612,10 +1711,10 @@ class SimplePlayer(App):
                 else:
                     Logger.info("App: User closed file picker")
                     return None
-            else:
-                Logger.error("App: Could not open file picker." +
-                             + "User didn't have supported file picker")
-                return None
+
+            Logger.error("App: Could not open file picker. "
+                         + "User didn't have supported file picker")
+            return None
         else:
             Logger.info(f"App: File picker for {platform} is not supported")
 
@@ -1624,7 +1723,7 @@ class SimplePlayer(App):
         settings = self.root.get_screen("settings")
         if path is not None:
             settings.save_music_path(path)
-            Logger.info(f"App: Path saved {path}")
+            # Logger.info(f"App: Path saved {path}")
 
     def run_save_path(self):
         task = create_task(self.save_path())

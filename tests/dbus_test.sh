@@ -29,3 +29,11 @@
 #     PlayPause
 
 # dbus-monitor "sender='org.mpris.MediaPlayer2.smpl'"
+
+# busctl --user introspect org.freedesktop.portal.Desktop \
+#     /org/freedesktop/portal/desktop \
+#     org.freedesktop.portal.FileChooser
+
+# busctl --user introspect org.freedesktop.portal.Desktop \
+#     /org/freedesktop/portal/desktop \
+#     org.freedesktop.portal.Desktop
