@@ -1,27 +1,46 @@
-from os import environ
+from os import environ, makedirs
+from pathlib import Path
 
-from utils import get_audio_provider
+from utils import get_audio_provider, get_cache_dir, get_config_dir
 
 environ["KIVY_AUDIO"] = get_audio_provider()
+
+from kivy.config import Config
+
+kivy_config = str(get_config_dir().joinpath("kivy"))
+makedirs(kivy_config, exist_ok=True)
+kivy_config = str(Path(kivy_config).joinpath("config.ini"))
+try:
+    with open(kivy_config, "x"):
+        pass
+except FileExistsError:
+    pass
+
+Config.read(kivy_config)
+Config.set("input", "mouse", "mouse,multitouch_on_demand")
+Config.set("kivy", "exit_on_escape", 0)
+Config.set("kivy", "log_dir", str(get_cache_dir().joinpath("logs")))
+Config.set("kivy", "log_enable", 1)
+Config.set("kivy", "log_level", "info")
+Config.set("kivy", "log_name", "smpl-%y-%m-%d-%_.txt")
+Config.set("kivy", "log_maxfiles", 2)
+Config.write()
 
 import kivy
 
 kivy.require('2.3.1')
 
-from os import makedirs
 from sys import platform
 from enum import Enum
 from json import dumps, loads
 from shutil import which
 from asyncio import create_task, sleep
-from pathlib import Path
 from subprocess import run as subrun
 from urllib.parse import unquote, urlparse
 
 from rapidfuzz import fuzz
 from kivy.app import App
 from kivy.clock import Clock
-from kivy.config import Config
 from kivy.logger import Logger
 from kivy.factory import Factory
 from kivy.properties import (BooleanProperty, BoundedNumericProperty,
@@ -50,7 +69,7 @@ from kivy.uix.recycleview.views import RecycleKVIDsDataViewBehavior
 from db import (Album, Artist, create_db, db_exists, get_album_tracks,
                 get_all_albums, get_all_artists, get_all_tracks,
                 get_artist_albums, remove_db)
-from utils import (application_path, get_config_dir, get_dbus_support,
+from utils import (application_path, get_cache_dir, get_dbus_support,
                    get_win_media_support)
 from config import Color, Size
 from metadata import Metadata
@@ -77,9 +96,7 @@ if platform == "win32":
     from winrt.runtime.interop import initialize_with_window
     from winrt.windows.storage.pickers import FolderPicker, PickerLocationId
 
-__version__ = "1.3.1a"
-
-Config.set("input", "mouse", "mouse,multitouch_on_demand")
+__version__ = "1.4.0a"
 
 # FIXME: Jumping search on low size screen
 # TODO!: if audio device is disconnected stop music for win
