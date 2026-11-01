@@ -11,6 +11,7 @@ dbus_support = get_dbus_support()
 if dbus_support:
     from dbus import start_dbus
 
+pulse_support = False
 if platform == "linux":
     from pulse import start_pulse
 

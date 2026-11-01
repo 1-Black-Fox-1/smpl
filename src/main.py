@@ -95,11 +95,12 @@ else:
 if platform == "win32":
     from winrt.runtime.interop import initialize_with_window
     from winrt.windows.storage.pickers import FolderPicker, PickerLocationId
+    from windevice import start_win_device, stop_win_device
 
-__version__ = "1.5.0a"
+__version__ = "1.6.0a"
 
 # FIXME: Jumping search on low size screen
-# TODO!: if audio device is disconnected stop music for win
+# TODO: Size of text on screen
 # TODO: tap on cover to open it fullscreen
 # TODO: check out pango text provider
 # TODO: better logging
@@ -774,9 +775,10 @@ class PlayerScreen(Screen):
 
     def pause(self):
         app = App.get_running_app()
-        app.pause_pos = self.sound_provider.get_pos()
-        self.sound_provider.stop()
-        Logger.info("Player: Stop playing")
+        if self.sound_provider.state == "play":
+            app.pause_pos = self.sound_provider.get_pos()
+            self.sound_provider.stop()
+            Logger.info("Player: Stop playing")
 
     def stop(self):
         app = App.get_running_app()
@@ -879,8 +881,8 @@ class PlayerScreen(Screen):
             player_interface.emit_properties_changed({"Metadata": player_interface.create_dbus_metadata(self.now_playing)})
         if win_media_support:
             task = create_task(on_media_opened(self, None))
-            self.background_tasks.add(task)
-            task.add_done_callback(self.background_tasks.discard)
+            app.background_tasks.add(task)
+            task.add_done_callback(app.background_tasks.discard)
         if prev_track_loop is not None:
             self.sound_provider.loop = prev_track_loop
         if prev_track_state == "play":
@@ -988,6 +990,9 @@ class PlayerScreen(Screen):
         if value > self.sound_provider.length:
             return self.sound_provider.length
         return value
+
+    def toggle_play(self):
+        self.ids.play_button.toggle_play()
 
 
 class TrackView(RecycleKVIDsDataViewBehavior, BoxLayout, Button):
@@ -1451,6 +1456,8 @@ class SimplePlayer(App):
     library_state = LibraryState.FILTER
     scroll_state = [1, 1]
     exit_dialog_opened = BooleanProperty(False)
+    if platform == "win32":
+        device = ObjectProperty()
 
     def build(self):
         self.font = "NotoSansJP"
@@ -1596,6 +1603,10 @@ class SimplePlayer(App):
                     self.theme = Color()
         except FileNotFoundError:
             pass
+
+        if platform == "win32":
+            start_win_device()
+
         if db_exists():
             Clock.schedule_once(lambda dt: self.update_songs(get_all_tracks()), -1)
             Clock.schedule_once(lambda dt: self.update_albums(get_all_albums()), -1)
@@ -1615,6 +1626,9 @@ class SimplePlayer(App):
     def on_stop(self):
         with open(self.settings_json, "w") as f:
             f.write(self.get_settings_json())
+
+        if platform == "win32":
+            stop_win_device
 
     def save_config(self):
         with open(self.settings_json, "w") as f:
