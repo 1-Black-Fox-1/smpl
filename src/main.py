@@ -97,7 +97,7 @@ if platform == "win32":
     from winrt.windows.storage.pickers import FolderPicker, PickerLocationId
     from windevice import start_win_device, stop_win_device
 
-__version__ = "1.6.0a"
+__version__ = "1.6.1a"
 
 # FIXME: Jumping search on low size screen
 # TODO: Size of text on screen
@@ -279,8 +279,8 @@ class SeekForwardButton(Button):
         time_to_seek = root.handler_track_pos(root.track_pos + root.seek_time)
         root.sound_provider.seek(time_to_seek)
         app.pause_pos = time_to_seek
-        root.update_slider_value()
-        root.update_pos()
+        Clock.schedule_once(lambda dt: root.update_pos(), 0)
+        Clock.schedule_once(lambda dt: root.update_slider_value(), 0)
         if dbus_support:
             player_interface.Seeked(time_to_seek)
 
@@ -292,8 +292,8 @@ class SeekBackwardButton(Button):
         time_to_seek = root.handler_track_pos(root.track_pos - root.seek_time)
         root.sound_provider.seek(time_to_seek)
         app.pause_pos = time_to_seek
-        root.update_slider_value()
-        root.update_pos()
+        Clock.schedule_once(lambda dt: root.update_pos(), 0)
+        Clock.schedule_once(lambda dt: root.update_slider_value(), 0)
         if dbus_support:
             player_interface.Seeked(time_to_seek)
 
