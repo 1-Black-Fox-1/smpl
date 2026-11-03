@@ -93,13 +93,14 @@ else:
     from pynput import keyboard
 
 if platform == "win32":
+    from windevice import start_win_device, stop_win_device
     from winrt.runtime.interop import initialize_with_window
     from winrt.windows.storage.pickers import FolderPicker, PickerLocationId
-    from windevice import start_win_device, stop_win_device
 
-__version__ = "1.6.1a"
+__version__ = "1.6.2a"
 
 # FIXME: Jumping search on low size screen
+# TODO: Create library player anitmation when in starts
 # TODO: Size of text on screen
 # TODO: tap on cover to open it fullscreen
 # TODO: check out pango text provider
@@ -370,16 +371,22 @@ class BackButton(ImageButton):
             if (library.last_opened_artist is None
                 and library.last_opened_album is None
                 and not app.exit_dialog_opened):
-                app.exit_dialog = Factory.ExitDialog().open()
-                app.exit_dialog_opened = True
+                app.exit_dialog = Factory.ExitDialog()
+                app.exit_dialog.open()
             elif app.exit_dialog_opened:
-                app.exit_dialog_opened = False
+                app.exit_dialog.dismiss()
             else:
                 restore_library()
 
 
 class ExitDialog(ModalView):
-    pass
+    def on_open(self):
+        app = App.get_running_app()
+        app.exit_dialog_opened = True
+
+    def on_dismiss(self):
+        app = App.get_running_app()
+        app.exit_dialog_opened = False
 
 
 class SearchTextInput(TextInput):
@@ -1150,7 +1157,7 @@ class SettingsScreen(Screen):
                 f.write(app.get_settings_json())
             settings.ids.path_text_input.text = settings.ids.path_text_input.quote
         else:
-            Logger.error(f"Settings: Path {path} is invalid or already added")
+            Logger.warning(f"Settings: Path {path} is invalid or already added")
 
     def save_music_path(self, path: Path):
         app = App.get_running_app()
@@ -1164,7 +1171,7 @@ class SettingsScreen(Screen):
             with open(app.settings_json, "w") as f:
                 f.write(app.get_settings_json())
         else:
-            Logger.error(f"Settings: Path {path} is invalid or already added")
+            Logger.warning(f"Settings: Path {path} is invalid or already added")
 
 
 class PathTextInput(TextInput):
@@ -1456,6 +1463,7 @@ class SimplePlayer(App):
     library_state = LibraryState.FILTER
     scroll_state = [1, 1]
     exit_dialog_opened = BooleanProperty(False)
+    exit_dialog = ObjectProperty()
     if platform == "win32":
         device = ObjectProperty()
 
@@ -1784,7 +1792,6 @@ class SimplePlayer(App):
         settings = self.root.get_screen("settings")
         if path is not None:
             settings.save_music_path(path)
-            # Logger.info(f"App: Path saved {path}")
 
     def run_save_path(self):
         task = create_task(self.save_path())

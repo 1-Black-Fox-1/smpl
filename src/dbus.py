@@ -98,7 +98,6 @@ class PlayerInterface(ServiceInterface):
     def Seek(self, offset: "x"):
         app = App.get_running_app()
         player = app.player
-        Logger.info("BOOM offset")
         if player is not None:
             offset /= 10**6
             if offset < 0:
@@ -119,7 +118,6 @@ class PlayerInterface(ServiceInterface):
     def SetPosition(self, trackid: "o", pos: "x"):
         app = App.get_running_app()
         player = app.player
-        Logger.info("BOOM")
         if player is not None:
             if trackid != f"/org/mpris/MediaPlayer2/playlist/{player.now_playing.id}":
                 return

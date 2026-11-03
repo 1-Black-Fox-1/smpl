@@ -49,7 +49,7 @@ class Color:
                 self.icon = (1, 1, 1, 1)
 
             case _:
-                Logger.error(f"Unknown theme {self.name}")
+                Logger.error(f"Config: Unknown theme {self.name}")
                 self.primary = (0x12/255, 0x12/255, 0x12/255, 1)  # black
                 self.background = self.primary
                 self.background_secondary = (0x21/255, 0x21/255, 0x21/255, 1)  # grey
