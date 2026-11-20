@@ -97,7 +97,7 @@ if platform == "win32":
     from winrt.runtime.interop import initialize_with_window
     from winrt.windows.storage.pickers import FolderPicker, PickerLocationId
 
-__version__ = "1.6.2a"
+__version__ = "1.6.3a"
 
 # FIXME: Jumping search on low size screen
 # TODO: Create library player anitmation when in starts
@@ -1114,20 +1114,14 @@ class ScanIconButton(ButtonBehavior, Image):
             if db_exists():
                 remove_db()
             task = create_task(create_db(settings.music_paths))
-            app.scanning = True
             app.background_tasks.add(task)
+            app.scanning = True
             task.add_done_callback(app.background_tasks.discard)
-            task.add_done_callback(lambda task: app.update_songs(get_all_tracks()))
             task.add_done_callback(lambda task: set_scanning(False))
 
         def set_scanning(value):
             app = App.get_running_app()
             app.scanning = value
-        # Clock.schedule_once(lambda dt: app.update_songs(get_all_tracks()), 5)
-        # app.update_songs(get_all_tracks())
-        # app.update_albums(get_all_albums())
-        # app.update_artists(get_all_artists())
-        app.set_default_filter()
 
 
 class SettingsScreen(Screen):
@@ -1804,12 +1798,12 @@ class SimplePlayer(App):
         if value is True and self.scanning_event is None:
             self.scanning_event = Clock.schedule_interval(lambda dt: self.update_lv([]), 1)
         if value is False:
+            self.scanning_event.cancel()
+            self.scanning_event = None
             Clock.schedule_once(lambda dt: self.update_songs(get_all_tracks()), -1)
             Clock.schedule_once(lambda dt: self.update_albums(get_all_albums()), -1)
             Clock.schedule_once(lambda dt: self.update_artists(get_all_artists()), -1)
             Clock.schedule_once(lambda dt: self.set_default_filter(), -1)
-            self.scanning_event.cancel()
-            self.scanning_event = None
 
     def go_back(self):
         if self.root.current == "library":
