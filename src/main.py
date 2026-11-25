@@ -97,10 +97,10 @@ if platform == "win32":
     from winrt.runtime.interop import initialize_with_window
     from winrt.windows.storage.pickers import FolderPicker, PickerLocationId
 
-__version__ = "1.6.3a"
+__version__ = "1.6.4a"
 
 # FIXME: Jumping search on low size screen
-# TODO: Create library player anitmation when in starts
+# TODO: Create library player animation when it starts
 # TODO: Size of text on screen
 # TODO: tap on cover to open it fullscreen
 # TODO: check out pango text provider
@@ -884,8 +884,6 @@ class PlayerScreen(Screen):
         self.bind_update_pos()
         self.sound_provider.bind(on_stop=self.auto_play_next)
         self.sound_provider.volume = app.volume
-        if dbus_support:
-            player_interface.emit_properties_changed({"Metadata": player_interface.create_dbus_metadata(self.now_playing)})
         if win_media_support:
             task = create_task(on_media_opened(self, None))
             app.background_tasks.add(task)
@@ -894,6 +892,8 @@ class PlayerScreen(Screen):
             self.sound_provider.loop = prev_track_loop
         if prev_track_state == "play":
             self.sound_provider.play()
+        if dbus_support:
+            player_interface.emit_properties_changed({"Metadata": player_interface.create_dbus_metadata(self.now_playing)})
         root = app.root
         screen = root.current
         if screen == "library" or screen == "queue":
